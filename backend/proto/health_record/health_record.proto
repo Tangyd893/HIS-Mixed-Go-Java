@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package health_record;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/health_record";
+option java_package = "com.hismixed.grpc.health_record";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 健康档案服务
+service HealthRecordService {
+  // 获取健康概况
+  rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse);
+  // 获取健康时间线
+  rpc GetTimeline(GetTimelineRequest) returns (GetTimelineResponse);
+}
+
+// 获取概况请求
+message GetOverviewRequest {
+  int64 patient_id = 1;                       // 患者ID
+}
+
+// 健康概况
+message HealthOverview {
+  int64 patient_id = 1;                       // 患者ID
+  string patient_name = 2;                    // 患者姓名
+  string gender = 3;                          // 性别
+  int32 age = 4;                              // 年龄
+  string blood_type = 5;                      // 血型
+  string allergies = 6;                       // 过敏史
+  repeated string chronic_diseases = 7;       // 慢性病
+  int32 total_visits = 8;                     // 总就诊次数
+  int32 total_admissions = 9;                 // 总住院次数
+  string last_visit_date = 10;                // 最后就诊日期
+  repeated string active_problems = 11;       // 当前健康问题
+}
+
+// 获取概况响应
+message GetOverviewResponse {
+  HealthOverview overview = 1;                // 健康概况
+}
+
+// 获取时间线请求
+message GetTimelineRequest {
+  int64 patient_id = 1;                       // 患者ID
+  string start_date = 2;                      // 开始日期
+  string end_date = 3;                        // 结束日期
+  common.PageRequest page = 4;                // 分页
+}
+
+// 时间线条目
+message TimelineEntry {
+  string date = 1;                            // 日期
+  string event_type = 2;                      // 事件类型（就诊/住院/检查/手术）
+  string event_title = 3;                     // 事件标题
+  string event_summary = 4;                   // 事件摘要
+  string department = 5;                      // 科室
+  string status = 6;                          // 状态
+}
+
+// 获取时间线响应
+message GetTimelineResponse {
+  repeated TimelineEntry entries = 1;         // 时间线列表
+  common.PageResponse page = 2;               // 分页
+}

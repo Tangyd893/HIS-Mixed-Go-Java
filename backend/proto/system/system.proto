@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package system;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/system";
+option java_package = "com.hismixed.grpc.system";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 系统管理服务
+service SystemService {
+  // 获取字典列表
+  rpc ListDicts(ListDictsRequest) returns (ListDictsResponse);
+  // 获取审计日志
+  rpc GetAuditLogs(GetAuditLogsRequest) returns (GetAuditLogsResponse);
+}
+
+// 字典列表请求
+message ListDictsRequest {
+  string dict_type = 1;                       // 字典类型
+  string keyword = 2;                         // 搜索关键词
+  bool include_disabled = 3;                  // 是否包含停用项
+  common.PageRequest page = 4;                // 分页
+}
+
+// 字典项
+message DictItem {
+  int64 dict_id = 1;                          // 字典ID
+  string dict_type = 2;                       // 字典类型
+  string dict_code = 3;                       // 字典编码
+  string dict_name = 4;                       // 字典名称
+  int32 sort_order = 5;                       // 排序
+  string status = 6;                          // 状态（启用/停用）
+}
+
+// 字典列表响应
+message ListDictsResponse {
+  repeated DictItem dicts = 1;                // 字典列表
+  common.PageResponse page = 2;               // 分页
+}
+
+// 审计日志请求
+message GetAuditLogsRequest {
+  int64 user_id = 1;                          // 操作用户ID
+  string action = 2;                          // 操作类型
+  string resource_type = 3;                   // 资源类型
+  string start_time = 4;                      // 开始时间
+  string end_time = 5;                        // 结束时间
+  common.PageRequest page = 6;                // 分页
+}
+
+// 审计日志条目
+message AuditLog {
+  int64 log_id = 1;                           // 日志ID
+  int64 user_id = 2;                          // 用户ID
+  string username = 3;                        // 用户名
+  string real_name = 4;                       // 真实姓名
+  string action = 5;                          // 操作（创建/更新/删除/查询）
+  string resource_type = 6;                   // 资源类型
+  int64 resource_id = 7;                      // 资源ID
+  string detail = 8;                          // 操作详情（JSON）
+  string ip_address = 9;                      // IP地址
+  google.protobuf.Timestamp created_at = 10;  // 操作时间
+}
+
+// 审计日志响应
+message GetAuditLogsResponse {
+  repeated AuditLog logs = 1;                 // 日志列表
+  common.PageResponse page = 2;               // 分页
+}

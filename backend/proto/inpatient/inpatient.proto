@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package inpatient;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/inpatient";
+option java_package = "com.hismixed.grpc.inpatient";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 住院服务
+service InpatientService {
+  // 办理入院
+  rpc AdmitPatient(AdmitPatientRequest) returns (AdmitPatientResponse);
+  // 办理出院
+  rpc DischargePatient(DischargePatientRequest) returns (DischargePatientResponse);
+}
+
+// 入院请求
+message AdmitPatientRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 admission_dept_id = 2;                // 入院科室ID
+  int64 ward_id = 3;                          // 病区ID
+  string bed_no = 4;                          // 床位号
+  string admission_diagnosis = 5;             // 入院诊断
+  string admission_type = 6;                  // 入院方式（门诊/急诊/转院）
+  string condition_level = 7;                 // 病情等级
+  common.UserContext operator = 8;            // 操作人
+}
+
+// 入院响应
+message AdmitPatientResponse {
+  int64 inpatient_id = 1;                     // 住院号
+  string admission_no = 2;                    // 入院编号
+  string ward_name = 3;                       // 病区名称
+  string bed_no = 4;                          // 床位号
+  string status = 5;                          // 状态
+  google.protobuf.Timestamp admitted_at = 6;  // 入院时间
+}
+
+// 出院请求
+message DischargePatientRequest {
+  int64 inpatient_id = 1;                     // 住院号
+  string discharge_type = 2;                  // 出院方式（治愈/好转/转院/死亡）
+  string discharge_diagnosis = 3;             // 出院诊断
+  string summary = 4;                         // 出院小结
+  common.UserContext operator = 5;            // 操作人
+}
+
+// 出院响应
+message DischargePatientResponse {
+  int64 inpatient_id = 1;                     // 住院号
+  string status = 2;                          // 状态
+  google.protobuf.Timestamp discharged_at = 3;// 出院时间
+}

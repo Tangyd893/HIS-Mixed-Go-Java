@@ -1,0 +1,15 @@
+server:
+  port: 8093
+spring:
+  application:
+    name: his-health-record
+  datasource:
+    url: jdbc:postgresql://localhost:5432/his_health_record
+    username: his_admin
+    password: change_me_123
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848

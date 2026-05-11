@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package emr;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/emr";
+option java_package = "com.hismixed.grpc.emr";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 电子病历服务
+service EmrService {
+  // 创建病历记录
+  rpc CreateRecord(CreateRecordRequest) returns (CreateRecordResponse);
+  // 获取病历记录
+  rpc GetRecord(GetRecordRequest) returns (GetRecordResponse);
+}
+
+// 创建病历请求
+message CreateRecordRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 encounter_id = 2;                     // 就诊ID
+  string record_type = 3;                     // 病历类型（门诊/住院/急诊）
+  string chief_complaint = 4;                 // 主诉
+  string present_illness = 5;                 // 现病史
+  string past_history = 6;                    // 既往史
+  string physical_exam = 7;                   // 体格检查
+  string auxiliary_exam = 8;                  // 辅助检查
+  string treatment_plan = 9;                  // 治疗计划
+  string medical_advice = 10;                 // 医嘱
+  common.UserContext author = 11;             // 作者
+}
+
+// 创建病历响应
+message CreateRecordResponse {
+  int64 record_id = 1;                        // 病历ID
+  string record_no = 2;                       // 病历编号
+  string status = 3;                          // 状态
+}
+
+// 获取病历请求
+message GetRecordRequest {
+  int64 record_id = 1;                        // 病历ID
+  int64 patient_id = 2;                       // 患者ID
+  int64 encounter_id = 3;                     // 就诊ID
+}
+
+// 病历信息
+message EmrRecord {
+  int64 record_id = 1;                        // 病历ID
+  int64 patient_id = 2;                       // 患者ID
+  string patient_name = 3;                    // 患者姓名
+  int64 encounter_id = 4;                     // 就诊ID
+  string record_type = 5;                     // 病历类型
+  string chief_complaint = 6;                 // 主诉
+  string present_illness = 7;                 // 现病史
+  string past_history = 8;                    // 既往史
+  string physical_exam = 9;                   // 体格检查
+  string auxiliary_exam = 10;                 // 辅助检查
+  string treatment_plan = 11;                 // 治疗计划
+  string medical_advice = 12;                 // 医嘱
+  string status = 13;                         // 状态
+  string author_name = 14;                    // 作者姓名
+  google.protobuf.Timestamp created_at = 15;  // 创建时间
+  google.protobuf.Timestamp updated_at = 16;  // 更新时间
+}
+
+// 获取病历响应
+message GetRecordResponse {
+  EmrRecord record = 1;                       // 病历详情
+}

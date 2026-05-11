@@ -1,0 +1,15 @@
+server:
+  port: 8089
+spring:
+  application:
+    name: his-inpatient
+  datasource:
+    url: jdbc:postgresql://localhost:5432/his_inpatient
+    username: his_admin
+    password: change_me_123
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848

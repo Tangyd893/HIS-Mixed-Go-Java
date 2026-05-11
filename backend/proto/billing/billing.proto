@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package billing;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/billing";
+option java_package = "com.hismixed.grpc.billing";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 收费服务
+service BillingService {
+  // 计算费用
+  rpc CalculateFee(CalculateFeeRequest) returns (CalculateFeeResponse);
+  // 处理支付
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+}
+
+// 费用项
+message FeeItem {
+  string item_type = 1;                       // 费用类型（挂号费/药费/检查费/材料费等）
+  int64 item_id = 2;                          // 关联项目ID
+  string item_name = 3;                       // 项目名称
+  string specification = 4;                   // 规格
+  double unit_price = 5;                      // 单价
+  int32 quantity = 6;                         // 数量
+  double amount = 7;                          // 金额
+  double self_pay_ratio = 8;                  // 自付比例
+}
+
+// 计算费用请求
+message CalculateFeeRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 encounter_id = 2;                     // 就诊ID
+  repeated FeeItem items = 3;                 // 费用项目
+  string insurance_type = 4;                  // 医保类型
+}
+
+// 计算费用响应
+message CalculateFeeResponse {
+  double total_amount = 1;                    // 总金额
+  double insurance_amount = 2;                // 医保支付
+  double self_pay_amount = 3;                 // 自付金额
+  repeated FeeItem details = 4;               // 费用明细
+}
+
+// 支付方式
+message PaymentMethod {
+  string method = 1;                          // 支付方式（现金/医保卡/微信/支付宝/银行卡）
+  double amount = 2;                          // 支付金额
+}
+
+// 处理支付请求
+message ProcessPaymentRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 encounter_id = 2;                     // 就诊ID
+  repeated int64 fee_item_ids = 3;            // 待支付费用项ID
+  repeated PaymentMethod payments = 4;        // 支付方式
+  common.UserContext operator = 5;            // 操作员
+}
+
+// 处理支付响应
+message ProcessPaymentResponse {
+  int64 transaction_id = 1;                   // 交易ID
+  string receipt_no = 2;                      // 收据号
+  double total_paid = 3;                      // 实收金额
+  string status = 4;                          // 状态
+  google.protobuf.Timestamp paid_at = 5;      // 支付时间
+}

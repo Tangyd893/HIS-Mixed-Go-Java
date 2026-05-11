@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/notification";
+option java_package = "com.hismixed.grpc.notification";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 通知服务
+service NotificationService {
+  // 发送消息
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  // 获取消息模板
+  rpc GetTemplates(GetTemplatesRequest) returns (GetTemplatesResponse);
+}
+
+// 发送消息请求
+message SendMessageRequest {
+  repeated int64 receiver_ids = 1;            // 接收人ID列表
+  string channel = 2;                         // 渠道（短信/站内信/推送/微信）
+  string template_code = 3;                   // 模板编码
+  map<string, string> params = 4;             // 模板参数
+  string title = 5;                           // 消息标题
+  string content = 6;                         // 消息内容（不使用模板时）
+  common.UserContext sender = 7;              // 发送人
+}
+
+// 发送消息响应
+message SendMessageResponse {
+  int64 message_id = 1;                       // 消息ID
+  int32 success_count = 2;                    // 成功数
+  int32 fail_count = 3;                       // 失败数
+}
+
+// 获取模板请求
+message GetTemplatesRequest {
+  string channel = 1;                         // 渠道
+  string template_type = 2;                   // 模板类型
+  common.PageRequest page = 3;                // 分页
+}
+
+// 消息模板
+message MessageTemplate {
+  int64 template_id = 1;                      // 模板ID
+  string template_code = 2;                   // 模板编码
+  string template_name = 3;                   // 模板名称
+  string channel = 4;                         // 渠道
+  string title_template = 5;                  // 标题模板
+  string content_template = 6;                // 内容模板
+  string status = 7;                          // 状态
+}
+
+// 获取模板响应
+message GetTemplatesResponse {
+  repeated MessageTemplate templates = 1;     // 模板列表
+  common.PageResponse page = 2;               // 分页
+}

@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package prescription;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/prescription";
+option java_package = "com.hismixed.grpc.prescription";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 处方服务
+service PrescriptionService {
+  // 创建处方
+  rpc CreatePrescription(CreatePrescriptionRequest) returns (CreatePrescriptionResponse);
+  // 提交审核
+  rpc SubmitReview(SubmitReviewRequest) returns (SubmitReviewResponse);
+}
+
+// 处方药品项
+message PrescriptionItem {
+  int64 drug_id = 1;                          // 药品ID
+  string drug_name = 2;                       // 药品名称
+  string specification = 3;                   // 规格
+  string usage_label = 4;                     // 用法（口服/外用等）
+  string dosage = 5;                          // 用量
+  string frequency = 6;                       // 频次
+  int32 days = 7;                             // 天数
+  int32 quantity = 8;                         // 数量
+  string remark = 9;                          // 备注
+}
+
+// 创建处方请求
+message CreatePrescriptionRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 encounter_id = 2;                     // 就诊ID
+  string prescription_type = 3;               // 处方类型（西药/中药/检查）
+  repeated PrescriptionItem items = 4;        // 处方明细
+  string note = 5;                            // 备注
+  common.UserContext doctor = 6;              // 开方医生
+}
+
+// 创建处方响应
+message CreatePrescriptionResponse {
+  int64 prescription_id = 1;                  // 处方ID
+  string prescription_no = 2;                 // 处方编号
+  string status = 3;                          // 状态
+}
+
+// 提交审核请求
+message SubmitReviewRequest {
+  int64 prescription_id = 1;                  // 处方ID
+  common.UserContext reviewer = 2;            // 审核人
+}
+
+// 提交审核响应
+message SubmitReviewResponse {
+  int64 review_id = 1;                        // 审核记录ID
+  string status = 2;                          // 审核状态（通过/驳回）
+  string comment = 3;                         // 审核意见
+}

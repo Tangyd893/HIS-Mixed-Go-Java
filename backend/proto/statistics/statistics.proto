@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package statistics;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/statistics";
+option java_package = "com.hismixed.grpc.statistics";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 统计服务
+service StatisticsService {
+  // 获取仪表盘数据
+  rpc GetDashboard(GetDashboardRequest) returns (GetDashboardResponse);
+  // 获取趋势数据
+  rpc GetTrend(GetTrendRequest) returns (GetTrendResponse);
+}
+
+// 仪表盘请求
+message GetDashboardRequest {
+  string period = 1;                          // 统计周期（今天/本周/本月）
+  int64 department_id = 2;                    // 科室ID（可选）
+}
+
+// 仪表盘响应
+message GetDashboardResponse {
+  int64 total_registrations = 1;              // 挂号总量
+  int64 total_outpatients = 2;                // 门诊量
+  int64 total_inpatients = 3;                 // 住院量
+  int64 total_prescriptions = 4;              // 处方量
+  double total_revenue = 5;                   // 总收入
+  repeated DepartmentStat dept_stats = 6;     // 各科室统计
+}
+
+// 科室统计
+message DepartmentStat {
+  int64 department_id = 1;                    // 科室ID
+  string department_name = 2;                 // 科室名称
+  int64 visit_count = 3;                      // 就诊人次
+  double revenue = 4;                         // 收入
+}
+
+// 趋势请求
+message GetTrendRequest {
+  string metric = 1;                          // 指标（门诊量/收入/处方量等）
+  string start_date = 2;                      // 开始日期
+  string end_date = 3;                        // 结束日期
+  string granularity = 4;                     // 粒度（日/周/月）
+  int64 department_id = 5;                    // 科室ID（可选）
+}
+
+// 趋势项
+message TrendPoint {
+  string date = 1;                            // 日期
+  double value = 2;                           // 数值
+}
+
+// 趋势响应
+message GetTrendResponse {
+  string metric = 1;                          // 指标
+  repeated TrendPoint points = 2;             // 数据点
+}

@@ -1,0 +1,39 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Go
+backend/go/bin/
+backend/go/vendor/
+
+# Java
+backend/java/**/target/
+backend/java/**/.classpath
+backend/java/**/.project
+backend/java/**/.settings/
+
+# Node / Frontend
+node_modules/
+dist/
+.env.local
+*.log
+
+# Docker
+docker/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+*.out
+coverage/

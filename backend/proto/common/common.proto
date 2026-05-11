@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/common";
+
+// 分页请求
+message PageRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string sort = 3;
+  string order = 4;
+}
+
+// 分页响应
+message PageResponse {
+  int32 page = 1;
+  int32 page_size = 2;
+  int64 total = 3;
+}
+
+// 用户上下文
+message UserContext {
+  int64 user_id = 1;
+  string username = 2;
+  repeated string roles = 3;
+  repeated string permissions = 4;
+  string real_name = 5;
+  int64 department_id = 6;
+}
+
+// 统一错误响应
+message ErrorResponse {
+  int32 code = 1;
+  string message = 2;
+  int64 timestamp = 3;
+}
+
+// 健康检查请求/响应
+message HealthCheckRequest {}
+message HealthCheckResponse {
+  string status = 1;
+  map<string, ServiceStatus> services = 2;
+}
+message ServiceStatus {
+  string status = 1;
+  string error = 2;
+}

@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package pharmacy;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/pharmacy";
+option java_package = "com.hismixed.grpc.pharmacy";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 药房服务
+service PharmacyService {
+  // 校验库存
+  rpc CheckStock(CheckStockRequest) returns (CheckStockResponse);
+  // 发药
+  rpc DispenseDrug(DispenseDrugRequest) returns (DispenseDrugResponse);
+}
+
+// 校验库存请求
+message CheckStockRequest {
+  repeated StockCheckItem items = 1;          // 待校验药品列表
+}
+
+// 库存校验项
+message StockCheckItem {
+  int64 drug_id = 1;                          // 药品ID
+  string drug_code = 2;                       // 药品编码
+  int32 quantity = 3;                         // 需求数量
+}
+
+// 校验库存响应
+message CheckStockResponse {
+  bool sufficient = 1;                        // 库存是否充足
+  repeated StockResult results = 2;           // 逐项结果
+}
+
+// 库存结果
+message StockResult {
+  int64 drug_id = 1;                          // 药品ID
+  string drug_name = 2;                       // 药品名称
+  int32 available = 3;                        // 可用库存
+  int32 required = 4;                         // 需求数量
+  bool enough = 5;                            // 是否满足
+}
+
+// 发药请求
+message DispenseDrugRequest {
+  int64 prescription_id = 1;                  // 处方ID
+  int64 patient_id = 2;                       // 患者ID
+  repeated DispenseItem items = 3;            // 发药明细
+  common.UserContext operator = 4;            // 操作人
+}
+
+// 发药明细项
+message DispenseItem {
+  int64 drug_id = 1;                          // 药品ID
+  string batch_no = 2;                        // 批号
+  int32 quantity = 3;                         // 数量
+  string usage_label = 4;                     // 用法标签
+}
+
+// 发药响应
+message DispenseDrugResponse {
+  int64 dispense_id = 1;                      // 发药记录ID
+  string status = 2;                          // 状态
+  google.protobuf.Timestamp dispensed_at = 3; // 发药时间
+}

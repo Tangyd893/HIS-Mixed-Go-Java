@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package followup;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/followup";
+option java_package = "com.hismixed.grpc.followup";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 随访服务
+service FollowupService {
+  // 创建随访计划
+  rpc CreatePlan(CreatePlanRequest) returns (CreatePlanResponse);
+  // 添加随访记录
+  rpc AddRecord(AddRecordRequest) returns (AddRecordResponse);
+}
+
+// 创建随访计划请求
+message CreatePlanRequest {
+  int64 patient_id = 1;                       // 患者ID
+  string plan_name = 2;                       // 计划名称
+  string followup_type = 3;                   // 随访类型
+  string start_date = 4;                      // 开始日期
+  string end_date = 5;                        // 结束日期
+  string frequency = 6;                       // 随访频率（每周/每月等）
+  string template_id = 7;                     // 模板ID
+  common.UserContext creator = 8;             // 创建人
+}
+
+// 创建随访计划响应
+message CreatePlanResponse {
+  int64 plan_id = 1;                          // 计划ID
+  string status = 2;                          // 状态
+  int32 total_tasks = 3;                      // 总随访任务数
+}
+
+// 添加随访记录请求
+message AddRecordRequest {
+  int64 plan_id = 1;                          // 随访计划ID
+  int64 patient_id = 2;                       // 患者ID
+  string record_type = 3;                     // 记录类型（电话/上门/门诊）
+  string content = 4;                         // 随访内容
+  string patient_condition = 5;               // 患者状况
+  string advice = 6;                          // 随访建议
+  google.protobuf.Timestamp followup_time = 7;// 随访时间
+  common.UserContext recorder = 8;            // 记录人
+}
+
+// 添加随访记录响应
+message AddRecordResponse {
+  int64 record_id = 1;                        // 记录ID
+  string status = 2;                          // 状态
+}

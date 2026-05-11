@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package schedule;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/schedule";
+option java_package = "com.hismixed.grpc.schedule";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 排班服务
+service ScheduleService {
+  // 生成排班时段
+  rpc GenerateSlots(GenerateSlotsRequest) returns (GenerateSlotsResponse);
+  // 获取排班列表
+  rpc GetSlots(GetSlotsRequest) returns (GetSlotsResponse);
+}
+
+// 生成排班请求（按日期范围批量生成）
+message GenerateSlotsRequest {
+  int64 doctor_id = 1;                        // 医生ID
+  int64 department_id = 2;                    // 科室ID
+  string start_date = 3;                      // 开始日期（yyyy-MM-dd）
+  string end_date = 4;                        // 结束日期
+  string slot_rule = 5;                       // 时段规则（上午/下午/全天）
+  int32 max_per_slot = 6;                     // 每时段最大号数
+}
+
+// 生成排班响应
+message GenerateSlotsResponse {
+  int32 generated_count = 1;                  // 生成的排班条目数
+  repeated string dates = 2;                  // 生成的日期列表
+}
+
+// 查询排班请求
+message GetSlotsRequest {
+  int64 doctor_id = 1;                        // 医生ID
+  int64 department_id = 2;                    // 科室ID
+  string date = 3;                            // 日期
+  string start_date = 4;                      // 开始日期
+  string end_date = 5;                        // 结束日期
+  common.PageRequest page = 6;                // 分页
+}
+
+// 排班时段信息
+message SlotInfo {
+  int64 slot_id = 1;                          // 时段ID
+  int64 doctor_id = 2;                        // 医生ID
+  string doctor_name = 3;                     // 医生姓名
+  int64 department_id = 4;                    // 科室ID
+  string department_name = 5;                 // 科室名称
+  string date = 6;                            // 日期
+  string time_slot = 7;                       // 时段
+  string card_type = 8;                       // 号别
+  int32 max_count = 9;                        // 最大号数
+  int32 booked_count = 10;                    // 已预约数
+  string status = 11;                         // 状态（有效/停诊）
+}
+
+// 查询排班响应
+message GetSlotsResponse {
+  repeated SlotInfo slots = 1;                // 排班列表
+  common.PageResponse page = 2;               // 分页
+}

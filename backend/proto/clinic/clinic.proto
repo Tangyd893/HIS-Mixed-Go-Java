@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package clinic;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/clinic";
+option java_package = "com.hismixed.grpc.clinic";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 门诊服务
+service ClinicService {
+  // 创建就诊记录
+  rpc CreateEncounter(CreateEncounterRequest) returns (CreateEncounterResponse);
+  // 添加诊断
+  rpc AddDiagnosis(AddDiagnosisRequest) returns (AddDiagnosisResponse);
+}
+
+// 创建就诊请求
+message CreateEncounterRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 doctor_id = 2;                        // 医生ID
+  int64 appointment_id = 3;                   // 挂号预约ID
+  string encounter_type = 4;                  // 就诊类型（初诊/复诊）
+  string chief_complaint = 5;                 // 主诉
+  string present_illness = 6;                 // 现病史
+  string past_history = 7;                    // 既往史
+  string physical_exam = 8;                   // 体格检查
+  common.UserContext doctor = 9;              // 接诊医生
+}
+
+// 创建就诊响应
+message CreateEncounterResponse {
+  int64 encounter_id = 1;                     // 就诊ID
+  string encounter_no = 2;                    // 就诊编号
+  string status = 3;                          // 状态
+  google.protobuf.Timestamp created_at = 4;   // 创建时间
+}
+
+// 添加诊断请求
+message AddDiagnosisRequest {
+  int64 encounter_id = 1;                     // 就诊ID
+  int64 patient_id = 2;                       // 患者ID
+  string diagnosis_code = 3;                  // 诊断编码（ICD-10）
+  string diagnosis_name = 4;                  // 诊断名称
+  string diagnosis_type = 5;                  // 诊断类型（主要/次要/中医）
+  int32 sequence = 6;                         // 序号
+  common.UserContext doctor = 7;              // 诊断医生
+}
+
+// 添加诊断响应
+message AddDiagnosisResponse {
+  int64 diagnosis_id = 1;                     // 诊断ID
+  string status = 2;                          // 状态
+}

@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package examination;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/examination";
+option java_package = "com.hismixed.grpc.examination";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 检查服务
+service ExaminationService {
+  // 创建检查报告
+  rpc CreateReport(CreateReportRequest) returns (CreateReportResponse);
+  // 获取检查报告
+  rpc GetReport(GetReportRequest) returns (GetReportResponse);
+}
+
+// 创建报告请求
+message CreateReportRequest {
+  int64 order_id = 1;                         // 检查医嘱ID
+  int64 patient_id = 2;                       // 患者ID
+  string exam_type = 3;                       // 检查类型
+  string body_part = 4;                       // 检查部位
+  string findings = 5;                        // 检查所见
+  string impression = 6;                      // 检查印象/诊断
+  common.UserContext operator = 7;            // 报告医师
+}
+
+// 创建报告响应
+message CreateReportResponse {
+  int64 report_id = 1;                        // 报告ID
+  string report_no = 2;                       // 报告编号
+  string status = 3;                          // 状态
+}
+
+// 获取报告请求
+message GetReportRequest {
+  int64 report_id = 1;                        // 报告ID
+  int64 patient_id = 2;                       // 患者ID
+  int64 order_id = 3;                         // 医嘱ID
+}
+
+// 检查报告详情
+message ExaminationReport {
+  int64 report_id = 1;                        // 报告ID
+  int64 patient_id = 2;                       // 患者ID
+  string patient_name = 3;                    // 患者姓名
+  string exam_type = 4;                       // 检查类型
+  string body_part = 5;                       // 检查部位
+  string findings = 6;                        // 检查所见
+  string impression = 7;                      // 检查印象
+  string conclusion = 8;                      // 结论
+  string status = 9;                          // 状态
+  google.protobuf.Timestamp exam_time = 10;   // 检查时间
+  google.protobuf.Timestamp report_time = 11; // 报告时间
+}
+
+// 获取报告响应
+message GetReportResponse {
+  ExaminationReport report = 1;               // 报告详情
+}

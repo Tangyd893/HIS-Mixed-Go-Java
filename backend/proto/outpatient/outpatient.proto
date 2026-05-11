@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package outpatient;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/outpatient";
+option java_package = "com.hismixed.grpc.outpatient";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 院外服务（远程会诊/院外协作）
+service OutpatientService {
+  // 创建远程会诊
+  rpc CreateConsultation(CreateConsultationRequest) returns (CreateConsultationResponse);
+  // 获取消息列表
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+}
+
+// 创建会诊请求
+message CreateConsultationRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 apply_dept_id = 2;                    // 申请科室ID
+  int64 consult_dept_id = 3;                  // 受邀科室ID
+  string title = 4;                           // 会诊标题
+  string description = 5;                     // 病情描述
+  string urgency = 6;                         // 紧急程度
+  repeated string attachments = 7;            // 附件URL列表
+  common.UserContext applicant = 8;           // 申请人
+}
+
+// 创建会诊响应
+message CreateConsultationResponse {
+  int64 consultation_id = 1;                  // 会诊ID
+  string status = 2;                          // 状态
+  google.protobuf.Timestamp created_at = 3;   // 创建时间
+}
+
+// 获取消息请求
+message GetMessagesRequest {
+  int64 consultation_id = 1;                  // 会诊ID
+  int64 user_id = 2;                          // 用户ID
+  common.PageRequest page = 3;                // 分页
+}
+
+// 会诊消息
+message ConsultationMessage {
+  int64 message_id = 1;                       // 消息ID
+  int64 consultation_id = 2;                  // 会诊ID
+  int64 sender_id = 3;                        // 发送人ID
+  string sender_name = 4;                     // 发送人姓名
+  string content = 5;                         // 消息内容
+  string message_type = 6;                    // 消息类型
+  google.protobuf.Timestamp sent_at = 7;      // 发送时间
+}
+
+// 获取消息响应
+message GetMessagesResponse {
+  repeated ConsultationMessage messages = 1;  // 消息列表
+  common.PageResponse page = 2;               // 分页
+}

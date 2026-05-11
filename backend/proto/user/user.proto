@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/user";
+option java_package = "com.hismixed.grpc.user";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 用户服务
+service UserService {
+  // 获取患者信息
+  rpc GetPatient(GetPatientRequest) returns (GetPatientResponse);
+  // 患者列表
+  rpc ListPatients(ListPatientsRequest) returns (ListPatientsResponse);
+}
+
+// 获取患者请求
+message GetPatientRequest {
+  int64 patient_id = 1;                       // 患者ID
+  string id_card = 2;                         // 身份证号
+}
+
+// 患者信息
+message PatientInfo {
+  int64 patient_id = 1;                       // 患者ID
+  string name = 2;                            // 姓名
+  string gender = 3;                          // 性别
+  string birthday = 4;                        // 出生日期
+  string id_card = 5;                         // 身份证号
+  string phone = 6;                           // 联系电话
+  string address = 7;                         // 地址
+  string blood_type = 8;                      // 血型
+  string allergies = 9;                       // 过敏史
+  string medical_insurance = 10;              // 医保类型
+  google.protobuf.Timestamp created_at = 11;  // 建档时间
+}
+
+// 获取患者响应
+message GetPatientResponse {
+  PatientInfo patient = 1;                    // 患者信息
+}
+
+// 患者列表请求
+message ListPatientsRequest {
+  string keyword = 1;                         // 搜索关键词（姓名/电话/身份证）
+  string gender = 2;                          // 性别筛选
+  string start_date = 3;                      // 建档开始日期
+  string end_date = 4;                        // 建档结束日期
+  common.PageRequest page = 5;                // 分页
+}
+
+// 患者列表响应
+message ListPatientsResponse {
+  repeated PatientInfo patients = 1;          // 患者列表
+  common.PageResponse page = 2;               // 分页
+}

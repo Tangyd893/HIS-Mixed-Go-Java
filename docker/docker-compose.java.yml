@@ -1,0 +1,222 @@
+version: "3.9"
+
+services:
+  his-auth:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-auth
+    ports:
+      - "8096:8096"
+      - "9096:9096"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_auth
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-user:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-user
+    ports:
+      - "8097:8097"
+      - "9097:9097"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_user
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-clinic:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-clinic
+    ports:
+      - "8098:8098"
+      - "9098:9098"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_clinic
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-emr:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-emr
+    ports:
+      - "8099:8099"
+      - "9099:9099"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_emr
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-prescription:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-prescription
+    ports:
+      - "8100:8100"
+      - "9100:9100"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_prescription
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-billing:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-billing
+    ports:
+      - "8101:8101"
+      - "9101:9101"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_billing
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-inpatient:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-inpatient
+    ports:
+      - "8102:8102"
+      - "9102:9102"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_inpatient
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-health-record:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-health-record
+    ports:
+      - "8103:8103"
+      - "9103:9103"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_health_record
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  his-system:
+    build:
+      context: ../backend/java
+      dockerfile: ../../docker/Dockerfile.java
+    container_name: his-system
+    ports:
+      - "8104:8104"
+      - "9104:9104"
+    environment:
+      DB_HOST: postgresql
+      DB_NAME: his_system
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+networks:
+  his-mixed-net:
+    external: true

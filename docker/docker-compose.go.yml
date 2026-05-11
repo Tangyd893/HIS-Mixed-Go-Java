@@ -1,0 +1,218 @@
+version: "3.9"
+
+services:
+  gateway:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  registration:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-registration
+    ports:
+      - "8083:8083"
+      - "9083:9083"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_registration
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  outpatient:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-outpatient
+    ports:
+      - "8091:8091"
+      - "9091:9091"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_outpatient
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  pharmacy:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-pharmacy
+    ports:
+      - "8087:8087"
+      - "9087:9087"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_pharmacy
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  schedule:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-schedule
+    ports:
+      - "8090:8090"
+      - "9090:9090"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_schedule
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  examination:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-examination
+    ports:
+      - "8088:8088"
+      - "9088:9088"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_examination
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  followup:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-followup
+    ports:
+      - "8092:8092"
+      - "9092:9092"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_followup
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  notification:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-notification
+    ports:
+      - "8094:8094"
+      - "9094:9094"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_notification
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+  statistics:
+    build:
+      context: ../backend/go
+      dockerfile: ../../docker/Dockerfile.go
+    container_name: his-statistics
+    ports:
+      - "8095:8095"
+      - "9095:9095"
+    environment:
+      DB_HOST: postgresql
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_456}
+      RABBITMQ_URL: amqp://admin:${RABBITMQ_PASSWORD:-change_me_789}@rabbitmq:5672/
+      NACOS_ADDR: nacos:8848
+      DB_NAME: his_statistics
+    depends_on:
+      - postgresql
+      - redis
+      - rabbitmq
+      - nacos
+    networks:
+      - his-mixed-net
+    restart: unless-stopped
+
+networks:
+  his-mixed-net:
+    external: true

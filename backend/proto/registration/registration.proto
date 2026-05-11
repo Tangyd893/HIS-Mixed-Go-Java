@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package registration;
+
+option go_package = "github.com/his-mixed/go/pkg/grpc/registration";
+option java_package = "com.hismixed.grpc.registration";
+
+import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+
+// 挂号服务
+service RegistrationService {
+  // 预约挂号
+  rpc RegisterAppointment(RegisterRequest) returns (RegisterResponse);
+  // 查询号源
+  rpc GetSchedules(GetSchedulesRequest) returns (GetSchedulesResponse);
+}
+
+// 预约挂号请求
+message RegisterRequest {
+  int64 patient_id = 1;                       // 患者ID
+  int64 schedule_id = 2;                      // 排班ID
+  string card_type = 3;                       // 挂号类型（普通/专家/急诊）
+  string visit_date = 4;                      // 就诊日期（yyyy-MM-dd）
+  string complaint = 5;                       // 主诉
+  int64 doctor_id = 6;                        // 期望医生ID
+}
+
+// 预约挂号响应
+message RegisterResponse {
+  int64 appointment_id = 1;                   // 预约ID
+  string serial_number = 2;                   // 挂号序号
+  string status = 3;                          // 状态
+  google.protobuf.Timestamp created_at = 4;   // 创建时间
+}
+
+// 查询号源请求
+message GetSchedulesRequest {
+  int64 department_id = 1;                    // 科室ID
+  string date = 2;                            // 日期（yyyy-MM-dd）
+  string card_type = 3;                       // 挂号类型
+  int64 doctor_id = 4;                        // 医生ID（可选）
+  common.PageRequest page = 5;                // 分页
+}
+
+// 号源信息
+message ScheduleInfo {
+  int64 schedule_id = 1;                      // 排班ID
+  int64 doctor_id = 2;                        // 医生ID
+  string doctor_name = 3;                     // 医生姓名
+  string department_name = 4;                 // 科室名称
+  string date = 5;                            // 日期
+  string time_slot = 6;                       // 时段
+  string card_type = 7;                       // 号别
+  int32 total_count = 8;                      // 总号数
+  int32 remain_count = 9;                     // 剩余号数
+  double fee = 10;                            // 挂号费
+}
+
+// 查询号源响应
+message GetSchedulesResponse {
+  repeated ScheduleInfo schedules = 1;        // 号源列表
+  common.PageResponse page = 2;               // 分页
+}

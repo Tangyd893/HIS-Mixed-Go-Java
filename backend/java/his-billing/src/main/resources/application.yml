@@ -1,0 +1,15 @@
+server:
+  port: 8086
+spring:
+  application:
+    name: his-billing
+  datasource:
+    url: jdbc:postgresql://localhost:5432/his_billing
+    username: his_admin
+    password: change_me_123
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
