@@ -1,0 +1,928 @@
+# ============================================================
+# gateway
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: his-mixed
+  labels:
+    app: gateway
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+  selector:
+    app: gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: his-mixed/go-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# registration
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: registration-service
+  namespace: his-mixed
+  labels:
+    app: registration
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083
+      targetPort: 8083
+      name: http
+    - port: 9083
+      targetPort: 9083
+      name: internal
+  selector:
+    app: registration
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registration
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registration
+  template:
+    metadata:
+      labels:
+        app: registration
+    spec:
+      containers:
+        - name: registration
+          image: his-mixed/go-registration:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+              name: http
+            - containerPort: 9083
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_registration
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# pharmacy
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: pharmacy-service
+  namespace: his-mixed
+  labels:
+    app: pharmacy
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8087
+      targetPort: 8087
+      name: http
+    - port: 9087
+      targetPort: 9087
+      name: internal
+  selector:
+    app: pharmacy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pharmacy
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pharmacy
+  template:
+    metadata:
+      labels:
+        app: pharmacy
+    spec:
+      containers:
+        - name: pharmacy
+          image: his-mixed/go-pharmacy:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8087
+              name: http
+            - containerPort: 9087
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_pharmacy
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8087
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8087
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# examination
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: examination-service
+  namespace: his-mixed
+  labels:
+    app: examination
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8088
+      targetPort: 8088
+      name: http
+    - port: 9088
+      targetPort: 9088
+      name: internal
+  selector:
+    app: examination
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: examination
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: examination
+  template:
+    metadata:
+      labels:
+        app: examination
+    spec:
+      containers:
+        - name: examination
+          image: his-mixed/go-examination:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8088
+              name: http
+            - containerPort: 9088
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_examination
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8088
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8088
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# schedule
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: schedule-service
+  namespace: his-mixed
+  labels:
+    app: schedule
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8090
+      targetPort: 8090
+      name: http
+    - port: 9090
+      targetPort: 9090
+      name: internal
+  selector:
+    app: schedule
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schedule
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: schedule
+  template:
+    metadata:
+      labels:
+        app: schedule
+    spec:
+      containers:
+        - name: schedule
+          image: his-mixed/go-schedule:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+              name: http
+            - containerPort: 9090
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_schedule
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8090
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8090
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# outpatient
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: outpatient-service
+  namespace: his-mixed
+  labels:
+    app: outpatient
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8091
+      targetPort: 8091
+      name: http
+    - port: 9091
+      targetPort: 9091
+      name: internal
+  selector:
+    app: outpatient
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outpatient
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: outpatient
+  template:
+    metadata:
+      labels:
+        app: outpatient
+    spec:
+      containers:
+        - name: outpatient
+          image: his-mixed/go-outpatient:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8091
+              name: http
+            - containerPort: 9091
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_outpatient
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8091
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8091
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# followup
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: followup-service
+  namespace: his-mixed
+  labels:
+    app: followup
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8092
+      targetPort: 8092
+      name: http
+    - port: 9092
+      targetPort: 9092
+      name: internal
+  selector:
+    app: followup
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: followup
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: followup
+  template:
+    metadata:
+      labels:
+        app: followup
+    spec:
+      containers:
+        - name: followup
+          image: his-mixed/go-followup:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8092
+              name: http
+            - containerPort: 9092
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_followup
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8092
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8092
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# notification
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: his-mixed
+  labels:
+    app: notification
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8094
+      targetPort: 8094
+      name: http
+    - port: 9094
+      targetPort: 9094
+      name: internal
+  selector:
+    app: notification
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification
+  template:
+    metadata:
+      labels:
+        app: notification
+    spec:
+      containers:
+        - name: notification
+          image: his-mixed/go-notification:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8094
+              name: http
+            - containerPort: 9094
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_notification
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8094
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8094
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+# ============================================================
+# statistics
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: statistics-service
+  namespace: his-mixed
+  labels:
+    app: statistics
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8095
+      targetPort: 8095
+      name: http
+    - port: 9095
+      targetPort: 9095
+      name: internal
+  selector:
+    app: statistics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: statistics
+  namespace: his-mixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: statistics
+  template:
+    metadata:
+      labels:
+        app: statistics
+    spec:
+      containers:
+        - name: statistics
+          image: his-mixed/go-statistics:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8095
+              name: http
+            - containerPort: 9095
+              name: internal
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: DB_PORT
+            - name: DB_NAME
+              value: his_statistics
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: REDIS_ADDR
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: his-mixed-secrets
+                  key: REDIS_PASSWORD
+            - name: RABBITMQ_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: RABBITMQ_URL
+            - name: NACOS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: his-mixed-config
+                  key: NACOS_ADDR
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8095
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8095
+            initialDelaySeconds: 10
+            periodSeconds: 5

@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/his-mixed/go/pkg/health"
+	"github.com/his-mixed/go/internal/gateway/router"
 	"github.com/his-mixed/go/pkg/middleware"
 )
 
@@ -19,9 +19,7 @@ func main() {
 	r.Use(middleware.Logger())
 	r.Use(middleware.Auth())
 
-	r.GET("/api/health", health.Handler)
-	r.GET("/api/ready", health.ReadyHandler)
-	r.GET("/api/ping", health.PingHandler)
+	router.SetupRouter(r)
 
 	log.Println("Gateway 启动在端口 8080")
 	if err := r.Run(":8080"); err != nil {

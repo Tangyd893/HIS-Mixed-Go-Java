@@ -21,22 +21,20 @@
 
 ## 当前完成度
 
-> 本项目处于**骨架搭建阶段**。18 个服务骨架已生成、Go 编译通过、Java 编译通过、gRPC 接口已定义、Docker 部署方案齐全。
+> 本项目处于**基础搭建阶段**。18 个服务骨架已生成、Go/Java 双端编译通过、gRPC 接口已定义、数据库迁移脚本齐全、21 个单元测试通过、Gateway 反向代理已实现、Docker + K8s 部署方案齐全。
 
 | 维度 | 状态 | 说明 |
 | ---- | ---- | ---- |
 | 后端骨架 | 已完成 | 18 个服务入口、18 个 proto 定义，Go handler/service/repository/model 分层完整 |
 | Go 构建 | 已通过 | `go build ./cmd/...` 通过，`go vet` 通过，`gofmt -w .` 零输出 |
 | Java 构建 | 已通过 | `mvn compile` 通过，9 个 Spring Boot 服务骨架可编译 |
-| gRPC | 已定义 | 18 个 `.proto` 已编写，待生成 `.pb.go` 和 Java stub |
-| 数据库 | 已设计 | 17 个数据库表结构完整设计（参见 [数据库设计文档](docs/数据库设计文档.md)） |
-| Docker | 配置就绪 | Dockerfile 和 docker-compose.yml/docker-compose.go.yml/docker-compose.java.yml 已就绪 |
-| Gateway JWT | 已接入 | JWT RS256 解析中间件已接入 Gateway，白名单路由放行 |
-| 健康检查 | 已增强 | `/api/health` 存活检查 + `/api/ready` 就绪检查 |
-| 错误码 | 已定义 | 83 个错误码覆盖全部 18 个模块，含 HTTP 状态码对照 |
-| 测试 | 待建立 | 目录已预留，单元测试和集成测试待编写 |
+| gRPC | 已定义 | 18 个 `.proto` 已编写，待生成 `.pb.go` 和 Java stub 代码 |
+| Gateway | 已实现 | JWT 鉴权 + CORS + 限流 + 17 个下游服务反向代理路由 |
+| 数据库迁移 | 已完成 | 18 个迁移脚本覆盖全部 17 个数据库，含完整建表 SQL |
+| Docker | 配置就绪 | Dockerfile 和 docker-compose 已就绪，Compose 配置解析已通过 |
+| 测试 | 已建立 | 21 个单元测试覆盖 JWT/错误码/通用工具/响应/中间件，全部通过 |
+| K8s 部署 | 已就绪 | `docker/k8s/base/` 含 12 个 YAML 清单，覆盖全部基础设施和 18 微服务 |
 | 前端 | 待搭建 | 目录已预留，管理端 + 患者端待启动 |
-| K8s 部署 | 已就绪 | `docker/k8s/base/` 含完整 YAML 清单，覆盖基础设施和全部微服务 |
 
 ## 技术栈
 
@@ -245,6 +243,9 @@ HIS-Mixed/
 |   |   |   ├── notification/               # 通知服务
 |   |   |   └── statistics/                 # 统计服务
 |   |   ├── internal/                        # 服务内部实现（handler/service/repository/model）
+|   |   |   ├── gateway/                    # 网关内部（路由/反向代理/配置）
+|   |   |   ├── registration/               # 挂号业务逻辑
+|   |   |   └── ...
 |   |   ├── pkg/                             # 公共模块
 |   |   |   ├── common/                      # 雪花算法、校验、加密
 |   |   |   ├── security/                    # JWT 解析、鉴权中间件

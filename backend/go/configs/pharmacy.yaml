@@ -1,0 +1,17 @@
+server:
+  name: "his-pharmacy"
+  http_port: 8087
+  grpc_port: 9087
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "his_admin"
+  password: "change_me_123"
+  dbname: "his_pharmacy"
+  sslmode: "disable"
+
+redis:
+  addr: "localhost:6379"
+  password: "change_me_456"
+  db: 0

@@ -8,6 +8,15 @@
 # Go
 backend/go/bin/
 backend/go/vendor/
+backend/go/gateway
+backend/go/registration
+backend/go/pharmacy
+backend/go/examination
+backend/go/schedule
+backend/go/outpatient
+backend/go/followup
+backend/go/notification
+backend/go/statistics
 
 # Java
 backend/java/**/target/
