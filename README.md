@@ -19,6 +19,25 @@
 - Nacos 统一服务注册发现与配置中心（Java + Go 双端接入）
 - Docker Compose 一键部署（PostgreSQL、Redis、RabbitMQ、Nacos、MinIO、Nginx）
 
+## 当前完成度
+
+> 本项目处于**骨架搭建阶段**。18 个服务骨架已生成、Go 编译通过、Java 编译通过、gRPC 接口已定义、Docker 部署方案齐全。
+
+| 维度 | 状态 | 说明 |
+| ---- | ---- | ---- |
+| 后端骨架 | 已完成 | 18 个服务入口、18 个 proto 定义，Go handler/service/repository/model 分层完整 |
+| Go 构建 | 已通过 | `go build ./cmd/...` 通过，`go vet` 通过，`gofmt -w .` 零输出 |
+| Java 构建 | 已通过 | `mvn compile` 通过，9 个 Spring Boot 服务骨架可编译 |
+| gRPC | 已定义 | 18 个 `.proto` 已编写，待生成 `.pb.go` 和 Java stub |
+| 数据库 | 已设计 | 17 个数据库表结构完整设计（参见 [数据库设计文档](docs/数据库设计文档.md)） |
+| Docker | 配置就绪 | Dockerfile 和 docker-compose.yml/docker-compose.go.yml/docker-compose.java.yml 已就绪 |
+| Gateway JWT | 已接入 | JWT RS256 解析中间件已接入 Gateway，白名单路由放行 |
+| 健康检查 | 已增强 | `/api/health` 存活检查 + `/api/ready` 就绪检查 |
+| 错误码 | 已定义 | 83 个错误码覆盖全部 18 个模块，含 HTTP 状态码对照 |
+| 测试 | 待建立 | 目录已预留，单元测试和集成测试待编写 |
+| 前端 | 待搭建 | 目录已预留，管理端 + 患者端待启动 |
+| K8s 部署 | 已就绪 | `docker/k8s/base/` 含完整 YAML 清单，覆盖基础设施和全部微服务 |
+
 ## 技术栈
 
 ### 后端
@@ -323,25 +342,261 @@ HIS-Mixed/
 
 详细表结构设计见 [数据库设计文档](docs/数据库设计文档.md)。
 
-## 跨语言通信设计
+## Go + Java 混合协作机制
 
-### gRPC 同步调用
+本项目的核心挑战和亮点在于让 Go 和 Java 两种异构技术栈的微服务无缝协作。我们采用 **三种协作机制** 实现跨语言互通：
 
-Java 和 Go 共享同一份 `.proto` 文件（位于 `backend/proto/`），作为跨语言唯一 API 契约。通过 Nacos 服务发现直连调用。
+```
+                    ┌─────────────────────────────────┐
+                    │          Go API Gateway          │
+                    │        (Gin + JWT + 限流)        │
+                    └───────────────┬─────────────────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │ gRPC                │ HTTP                │ gRPC
+              ▼                     ▼                     ▼
+   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+   │  Go 挂号服务      │   │  Java 认证服务    │   │  Go 药房服务      │
+   │  (高并发扣号源)    │   │  (JWT签发/RBAC)  │   │  (库存扣减)      │
+   └────────┬─────────┘   └────────┬─────────┘   └────────┬─────────┘
+            │                      │                      │
+            └──────────────────────┼──────────────────────┘
+                                   │
+                        ┌──────────▼──────────┐
+                        │     RabbitMQ         │
+                        │  • 挂号 → Java 持久化 │
+                        │  • 处方变更 → 通知    │
+                        │  • 操作日志 → 审计    │
+                        └──────────┬──────────┘
+                                   │
+                        ┌──────────▼──────────┐
+                        │    Java 消费端        │
+                        │  Spring Boot + MQ    │
+                        │  复杂事务持久化        │
+                        └─────────────────────┘
+```
 
-### RabbitMQ 异步协作
+### 一、同步调用：gRPC + Protobuf
 
-| 场景 | 生产者 | 消费者 |
-| ---- | ------ | ------ |
-| 挂号成功通知 | Go (Registration) | Java (持久化) + Go (Notification) |
-| 处方状态变更 | Java (Prescription) | Go (Notification / Pharmacy) |
-| 操作审计日志 | 全部服务 | Java (System) |
+**核心原则**：Proto 文件是 Go 和 Java 之间的**唯一 API 契约**，双方共享 `backend/proto/` 下的同一份定义。
 
-### 消息可靠性三大保障
+```
+┌──────────────────────────────────────────────────┐
+│            backend/proto/（单一来源）              │
+│                                                   │
+│  common/common.proto   ← 分页、用户上下文、错误    │
+│  registration/...      ← 挂号服务接口              │
+│  pharmacy/...          ← 药房服务接口              │
+│  auth/...              ← 认证服务接口              │
+│  ...（18 个服务共 18 个 proto 文件）                │
+└──────────────────────────────────────────────────┘
+         │                          │
+         │ protoc --go_out          │ protoc --java_out
+         ▼                          ▼
+  backend/go/pkg/grpc/      backend/java/.../stub/
+  (.pb.go 代码)              (Java stub 代码)
+```
 
-1. **生产者可靠发送**：本地消息表 + Publisher Confirm + 定时补偿重试
-2. **防止消息丢失**：持久化交换机/队列/消息 + Quorum Queue + 消费者手动 ACK + 死信队列
-3. **防止重复消费**：消息唯一 ID（雪花算法）+ 数据库唯一约束 + Redis 防重标记 + 业务幂等设计
+#### Go 调用 Java（同步查询患者信息）
+
+挂号服务(Go)需要校验患者身份时，通过 gRPC 同步调用 Java 用户服务：
+
+```go
+// backend/go/internal/registration/service/registration.go
+
+func (s *RegistrationService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+    // 1. 通过 Nacos 发现 Java 用户服务地址
+    conn, _ := grpc.GetConn("his-user:9082")
+
+    // 2. 同步调用 Java 服务获取患者信息
+    userClient := userpb.NewUserServiceClient(conn)
+    patient, err := userClient.GetPatient(ctx, &userpb.GetPatientRequest{
+        PatientId: req.PatientId,
+    })
+    if err != nil || patient == nil {
+        return nil, status.Error(codes.NotFound, "患者不存在")
+    }
+
+    // 3. Redis 分布式锁扣减号源
+    lockKey := fmt.Sprintf("schedule_lock:%d", req.ScheduleId)
+    redis.AcquireLock(ctx, lockKey, 30*time.Second)
+    defer redis.ReleaseLock(ctx, lockKey)
+
+    // 4. 扣减库存 → 返回挂号结果
+    remaining := redis.DecrStock(ctx, req.ScheduleId)
+    return &pb.RegisterResponse{
+        RegistrationId: common.NextID(),
+        QueueNumber:    remaining + 1,
+    }, nil
+}
+```
+
+#### Java 调用 Go（同步检查库存）
+
+收费服务(Java)在结算前需要确认药房库存：
+
+```java
+// backend/java/his-billing/.../service/BillingService.java
+
+@Service
+public class BillingService {
+
+    @Autowired
+    private GrpcClientFactory grpcClient;
+
+    public void processPayment(PaymentRequest request) {
+        // 1. 同步调用 Go 药房服务检查库存
+        var stub = grpcClient.createStub("his-pharmacy:9087",
+            PharmacyServiceGrpc::newBlockingStub);
+        var stock = stub.checkStock(CheckStockRequest.newBuilder()
+            .setDrugId(request.getDrugId())
+            .setQuantity(request.getQuantity())
+            .build());
+
+        if (stock.getRemaining() < request.getQuantity()) {
+            throw new BusinessException(7001, "药品库存不足");
+        }
+
+        // 2. 库存充足，继续收费流程...
+        paymentRepository.save(payment);
+    }
+}
+```
+
+### 二、异步解耦：RabbitMQ
+
+**使用场景**：当一笔操作需要跨越 Go 和 Java 两个生态、且涉及耗时事务时，通过 MQ 解耦。
+
+```
+高并发 Go 服务 ──(发布消息)──▶ RabbitMQ ──(消费消息)──▶ Java 服务（复杂事务持久化）
+```
+
+#### 典型异步协作场景
+
+| 场景 | 生产者 | 消费者 | 消息格式 | 交换机 |
+| ---- | ------ | ------ | -------- | ------ |
+| **挂号成功 → Java 持久化** | Go Registration | Java Consumer | `{registrationId, patientId, scheduleId}` | Topic |
+| **挂号成功 → 短信通知** | Go Registration | Go Notification | `{registrationId, phone, templateCode}` | Topic |
+| **处方审核通过 → 药房备药** | Java Prescription | Go Pharmacy | `{prescriptionId, drugItems[]}` | Topic |
+| **处方状态变更 → 患者通知** | Java Prescription | Go Notification | `{prescriptionId, status, patientId}` | Topic |
+| **异常指标 → 告警推送** | Go Examination | Go Notification | `{reportId, patientId, alertLevel}` | Direct |
+| **全服务操作日志 → 审计** | Go/Java 全部 | Java System | `{userId, action, module, params}` | Fanout |
+
+#### Go 发消息 → Java 消费（挂号持久化示例）
+
+```go
+// Go: 挂号成功后发布消息
+func (s *RegistrationService) afterRegister(id, patientId, scheduleId int64) {
+    publisher, _ := mq.NewPublisher("registration.topic")
+    publisher.Publish(ctx, "registration.created", map[string]interface{}{
+        "registrationId": id,
+        "patientId":      patientId,
+        "scheduleId":     scheduleId,
+        "status":         "registered",
+        "timestamp":      time.Now().Unix(),
+    })
+}
+```
+
+```java
+// Java: 消费消息，事务写入 PostgreSQL
+@Component
+public class RegistrationConsumer {
+
+    @Autowired
+    private RegistrationRepository repo;
+    @Autowired
+    private PatientRepository patientRepo;
+
+    @RabbitListener(queues = "registration.queue")
+    @Transactional
+    public void onRegistrationCreated(AppointmentMessage msg) {
+        // Java 擅长的复杂事务操作
+        Registration reg = new Registration();
+        reg.setId(msg.getRegistrationId());
+        reg.setPatientId(msg.getPatientId());
+        reg.setStatus(msg.getStatus());
+        repo.save(reg);
+
+        // 更新患者最后就诊时间
+        patientRepo.updateLastVisit(msg.getPatientId(), LocalDateTime.now());
+    }
+}
+```
+
+### 三、统一服务发现：Nacos
+
+Go 和 Java 的服务全部注册到同一个 Nacos 实例，跨语言服务发现流程：
+
+```
+Java Auth 启动      Go Gateway 启动
+     │                    │
+     ▼                    ▼
+ 注册到 Nacos        注册到 Nacos
+ 服务名: his-auth    服务名: his-gateway
+ IP:Port: 10.0.0.2:9081      IP:Port: 10.0.0.1:8080
+     │                    │
+     └────────┬───────────┘
+              ▼
+      Nacos 服务注册中心
+   （同一命名空间: his-mixed）
+              │
+     ┌────────┴────────┐
+     ▼                 ▼
+  Go 查询 Java        Java 查询 Go
+  gRPC 直连调用      gRPC 直连调用
+```
+
+- **Java** 通过 `spring-cloud-starter-alibaba-nacos-discovery` 自动注册/发现
+- **Go** 通过 Nacos Go SDK 手动注册/健康检查/服务发现
+
+### 四、跨语言数据一致性
+
+| 场景 | 策略 | 说明 |
+| ---- | ---- | ---- |
+| 号源扣减 | Redis 原子操作 (DECR) | 高并发无状态，Go 处理 |
+| 挂号写入 | Go → MQ → Java 事务写入 | 削峰填谷，最终一致性 |
+| 处方状态流转 | Java 乐观锁 (version 字段) | 单服务内强一致 |
+| 跨服务事务 | Seata AT 模式 (Java 侧) | 复杂分布式事务 |
+| 消息幂等 | 雪花ID + 数据库唯一约束 | 防止重复消费 |
+
+### 五、核心业务全链路示例：挂号流程
+
+```
+患者发起挂号
+    │
+    ▼
+┌──────────────────┐
+│ Go Gateway       │  ← JWT 鉴权 + 限流
+│ (端口 8080)       │
+└────────┬─────────┘
+         │ 转发
+         ▼
+┌──────────────────┐
+│ Go Registration  │  ← 高并发号源扣减
+│ 1. gRPC → Java   │──────▶  Java User 校验患者身份
+│    User 校验患者   │
+│ 2. Redis DECR    │──────▶  Redis 扣减号源 (原子操作)
+│    扣减号源       │
+│ 3. 雪花算法生成ID  │
+│ 4. MQ 发消息      │──────▶  RabbitMQ(registration.created)
+└────────┬─────────┘
+         │
+    ┌────┴────┐
+    ▼         ▼
+┌────────┐ ┌──────────┐
+│  Java  │ │   Go     │
+│Consumer│ │Notify    │
+│写入PG  │ │发短信/推送│
+│持久化   │ │          │
+└────────┘ └──────────┘
+```
+
+### 六、消息可靠性保障
+
+1. **生产者可靠发送**：本地消息表(Transactional Outbox) + Publisher Confirm + 定时补偿重试(2s/5s/10s)
+2. **防止消息丢失**：交换机/队列/消息持久化 + Quorum Queue(Raft) + 消费者手动 ACK + 死信队列(DLQ)
+3. **防止重复消费**：消息雪花ID + 数据库唯一约束 + Redis SETNX 防重标记 + 业务幂等(乐观锁/流水号)
 
 详见 [项目架构设计文档](docs/项目架构设计文档.md) 第七章。
 
