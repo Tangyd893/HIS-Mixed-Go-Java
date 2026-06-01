@@ -15,3 +15,6 @@ redis:
   addr: "localhost:6379"
   password: "change_me_456"
   db: 0
+
+rabbitmq:
+  url: "amqp://admin:change_me_789@localhost:5672/"
