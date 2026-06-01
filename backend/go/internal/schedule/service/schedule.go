@@ -1,47 +1,42 @@
 package service
 
-import "github.com/his-mixed/go/internal/schedule/model"
+import (
+	"github.com/his-mixed/go/internal/schedule/model"
+	"github.com/his-mixed/go/internal/schedule/repository"
+)
 
-// ScheduleService 排班业务服务
 type ScheduleService struct {
+	repo *repository.ScheduleRepository
 }
 
-// NewScheduleService 创建排班服务
-func NewScheduleService() *ScheduleService {
-	return &ScheduleService{}
+func NewScheduleService(repo *repository.ScheduleRepository) *ScheduleService {
+	return &ScheduleService{repo: repo}
 }
 
-// CreateSchedulePlan 创建排班计划
 func (s *ScheduleService) CreateSchedulePlan(plan *model.SchedulePlan) error {
-	return nil
+	return s.repo.CreatePlan(plan)
 }
 
-// GetSchedulePlanByID 按ID查询排班计划
 func (s *ScheduleService) GetSchedulePlanByID(id int64) (*model.SchedulePlan, error) {
-	return nil, nil
+	return s.repo.GetPlanByID(id)
 }
 
-// ListSchedulePlans 查询排班计划列表
 func (s *ScheduleService) ListSchedulePlans(doctorID, departmentID int64, page, size int) ([]model.SchedulePlan, int64, error) {
-	return nil, 0, nil
+	return s.repo.ListPlans(doctorID, departmentID, page, size)
 }
 
-// CreateScheduleSlot 创建号源时段
 func (s *ScheduleService) CreateScheduleSlot(slot *model.ScheduleSlot) error {
-	return nil
+	return s.repo.CreateSlot(slot)
 }
 
-// GetScheduleSlots 查询指定日期的号源
 func (s *ScheduleService) GetScheduleSlots(departmentID int64, scheduleDate string) ([]model.ScheduleSlot, error) {
-	return nil, nil
+	return s.repo.GetSlots(departmentID, scheduleDate)
 }
 
-// DeductQuota 扣减号源（乐观锁）
 func (s *ScheduleService) DeductQuota(slotID int64) error {
-	return nil
+	return s.repo.DeductQuota(slotID)
 }
 
-// ReleaseQuota 释放号源（乐观锁）
 func (s *ScheduleService) ReleaseQuota(slotID int64) error {
-	return nil
+	return s.repo.ReleaseQuota(slotID)
 }
