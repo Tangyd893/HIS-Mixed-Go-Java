@@ -77,9 +77,8 @@ func startGRPCServer(port int, db *gorm.DB) {
 	s := grpc.NewServer()
 
 	repo := repository.NewRegistrationRepository(db)
-	svc := service.NewRegistrationService()
+	svc := service.NewRegistrationService(repo)
 	h := handler.NewRegistrationHandler(svc)
-	_ = repo // TODO: 注入到 service 中
 
 	pb.RegisterRegistrationServiceServer(s, h)
 
