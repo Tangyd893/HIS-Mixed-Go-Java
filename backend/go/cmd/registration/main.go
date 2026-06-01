@@ -6,12 +6,17 @@ import (
 	"net"
 
 	"github.com/gin-gonic/gin"
+	"github.com/his-mixed/go/internal/registration/handler"
+	"github.com/his-mixed/go/internal/registration/repository"
+	"github.com/his-mixed/go/internal/registration/service"
 	"github.com/his-mixed/go/pkg/config"
 	"github.com/his-mixed/go/pkg/database"
+	pb "github.com/his-mixed/go/pkg/grpc/registration"
 	"github.com/his-mixed/go/pkg/health"
 	"github.com/his-mixed/go/pkg/middleware"
 	"github.com/his-mixed/go/pkg/redis"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -37,7 +42,7 @@ func main() {
 	}
 	defer database.Close()
 
-	// 连接Redis
+	// 连接Redis（返回值赋给全局 redis.Client）
 	_, err = redis.Connect(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
 	if err != nil {
 		log.Fatalf("连接Redis失败: %v", err)
@@ -64,15 +69,19 @@ func startHTTPServer(port int) {
 	}
 }
 
-func startGRPCServer(port int, db interface{}) {
+func startGRPCServer(port int, db *gorm.DB) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("gRPC 监听失败: %v", err)
 	}
 	s := grpc.NewServer()
 
-	// 注册gRPC服务
-	// pb.RegisterRegistrationServiceServer(s, handler)
+	repo := repository.NewRegistrationRepository(db)
+	svc := service.NewRegistrationService()
+	h := handler.NewRegistrationHandler(svc)
+	_ = repo // TODO: 注入到 service 中
+
+	pb.RegisterRegistrationServiceServer(s, h)
 
 	log.Printf("挂号服务 gRPC 启动在端口 %d", port)
 	if err := s.Serve(lis); err != nil {

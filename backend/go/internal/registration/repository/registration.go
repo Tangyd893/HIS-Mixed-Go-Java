@@ -40,11 +40,11 @@ func (r *RegistrationRepository) ListByPatientID(patientID int64, page, size int
 	var regs []model.Registration
 	var total int64
 
-	query := r.db.Where("patient_id = ?", patientID)
-	query.Model(&model.Registration{}).Count(&total)
+	base := r.db.Where("patient_id = ?", patientID)
+	base.Model(&model.Registration{}).Count(&total)
 
 	offset := (page - 1) * size
-	err := query.Offset(offset).Limit(size).Order("created_at DESC").Find(&regs).Error
+	err := base.Offset(offset).Limit(size).Order("created_at DESC").Find(&regs).Error
 	return regs, total, err
 }
 
