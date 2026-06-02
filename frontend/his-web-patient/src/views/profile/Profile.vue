@@ -13,37 +13,31 @@
         <div class="user-info">
           <a-avatar :size="64" icon="user" />
           <div class="user-detail">
-            <span class="user-name" v-if="isLoggedIn">患者姓名</span>
+            <span class="user-name" v-if="authStore.isLoggedIn">{{ authStore.realName || '患者' }}</span>
             <span class="user-name" v-else>未登录</span>
-            <span class="user-label" @click="$router.push('/login')" v-if="!isLoggedIn">点击登录</span>
+            <span class="user-label" @click="$router.push('/login')" v-if="!authStore.isLoggedIn">点击登录</span>
             <a-tag v-else color="green" size="small">已认证</a-tag>
           </div>
         </div>
       </a-card>
 
-      <a-card class="menu-card" title="账户信息">
+      <a-card class="menu-card" title="账户信息" v-if="authStore.isLoggedIn">
         <a-list :split="true">
           <a-list-item>
-            <a-list-item-meta title="姓名" description="张三" />
+            <a-list-item-meta title="姓名" :description="authStore.realName || '-'" />
           </a-list-item>
           <a-list-item>
-            <a-list-item-meta title="手机号" description="138****8888" />
+            <a-list-item-meta title="用户名" :description="authStore.username || '-'" />
           </a-list-item>
           <a-list-item>
-            <a-list-item-meta title="身份证号" description="320***********1234" />
-          </a-list-item>
-          <a-list-item>
-            <a-list-item-meta title="性别" description="男" />
-          </a-list-item>
-          <a-list-item>
-            <a-list-item-meta title="年龄" description="35岁" />
+            <a-list-item-meta title="用户ID" :description="String(authStore.userId) || '-'" />
           </a-list-item>
         </a-list>
       </a-card>
 
       <a-card class="menu-card" title="常用功能">
         <a-list :split="true">
-          <a-list-item v-for="item in menuItems" :key="item.label" @click="$router.push(item.path)">
+          <a-list-item v-for="item in menuItems" :key="item.label" @click="handleMenuClick(item.path)">
             <a-list-item-meta>
               <template #title>{{ item.label }}</template>
               <template #avatar>
@@ -58,7 +52,7 @@
       </a-card>
 
       <div class="button-area">
-        <a-button v-if="isLoggedIn" type="primary" danger block size="large" @click="handleLogout">
+        <a-button v-if="authStore.isLoggedIn" type="primary" danger block size="large" @click="handleLogout">
           退出登录
         </a-button>
         <a-button v-else type="primary" block size="large" @click="$router.push('/login')">
@@ -70,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
   LeftOutlined,
@@ -81,8 +75,10 @@ import {
   ExperimentOutlined,
   HeartOutlined,
 } from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores/auth'
 
-const isLoggedIn = ref(true)
+const router = useRouter()
+const authStore = useAuthStore()
 
 const menuItems = [
   { label: '我的挂号', path: '/appointments', icon: CalendarOutlined },
@@ -92,9 +88,19 @@ const menuItems = [
   { label: '我的随访', path: '/followup', icon: HeartOutlined },
 ]
 
+const handleMenuClick = (path: string) => {
+  if (!authStore.isLoggedIn) {
+    message.warning('请先登录')
+    router.push('/login')
+    return
+  }
+  router.push(path)
+}
+
 const handleLogout = () => {
+  authStore.logout()
   message.success('已退出登录')
-  isLoggedIn.value = false
+  router.push('/login')
 }
 </script>
 

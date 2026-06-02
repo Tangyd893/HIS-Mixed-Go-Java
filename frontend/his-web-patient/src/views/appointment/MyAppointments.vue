@@ -9,28 +9,67 @@
     </header>
 
     <div class="content">
-      <a-tabs v-model:activeKey="activeTab">
-        <a-tab-pane key="upcoming" tab="待就诊">
-          <a-card v-if="hasData" class="card-item" v-for="item in upcomingList" :key="item.id">
-            <div class="card-header">
-              <a-tag color="blue">{{ item.status }}</a-tag>
-              <span class="card-no">{{ item.queueNo }}</span>
-            </div>
-            <a-descriptions :column="1" size="small">
-              <a-descriptions-item label="就诊科室">{{ item.department }}</a-descriptions-item>
-              <a-descriptions-item label="就诊医生">{{ item.doctor }}</a-descriptions-item>
-              <a-descriptions-item label="就诊时间">{{ item.time }}</a-descriptions-item>
-            </a-descriptions>
-          </a-card>
-          <a-empty v-else description="暂无待就诊记录" />
+      <a-tabs v-model:activeKey="activeTab" @change="handleTabChange">
+        <a-tab-pane key="PENDING" tab="待就诊">
+          <a-spin :spinning="loading">
+            <template v-if="filteredList.length > 0">
+              <a-card class="card-item" v-for="item in filteredList" :key="item.id">
+                <div class="card-header">
+                  <a-tag :color="getStatusColor(item.status)">{{ getStatusText(item.status) }}</a-tag>
+                  <span class="card-no">排队号: {{ item.serialNumber }}</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="就诊科室">{{ item.departmentName || '待分配' }}</a-descriptions-item>
+                  <a-descriptions-item label="就诊医生">{{ item.doctorName || '待分配' }}</a-descriptions-item>
+                  <a-descriptions-item label="就诊时间">{{ item.visitDate }}</a-descriptions-item>
+                </a-descriptions>
+                <div class="card-actions" v-if="item.status === 'PENDING'">
+                  <a-popconfirm title="确定取消挂号吗？" @confirm="handleCancel(item.id)">
+                    <a-button type="link" danger size="small">取消挂号</a-button>
+                  </a-popconfirm>
+                </div>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无待就诊记录" />
+          </a-spin>
         </a-tab-pane>
 
-        <a-tab-pane key="completed" tab="已完成">
-          <a-empty description="暂无已完成记录" />
+        <a-tab-pane key="COMPLETED" tab="已完成">
+          <a-spin :spinning="loading">
+            <template v-if="filteredList.length > 0">
+              <a-card class="card-item" v-for="item in filteredList" :key="item.id">
+                <div class="card-header">
+                  <a-tag color="green">已完成</a-tag>
+                  <span class="card-no">{{ item.serialNumber }}</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="就诊科室">{{ item.departmentName }}</a-descriptions-item>
+                  <a-descriptions-item label="就诊医生">{{ item.doctorName }}</a-descriptions-item>
+                  <a-descriptions-item label="就诊时间">{{ item.visitDate }}</a-descriptions-item>
+                </a-descriptions>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无已完成记录" />
+          </a-spin>
         </a-tab-pane>
 
-        <a-tab-pane key="cancelled" tab="已取消">
-          <a-empty description="暂无已取消记录" />
+        <a-tab-pane key="CANCELLED" tab="已取消">
+          <a-spin :spinning="loading">
+            <template v-if="filteredList.length > 0">
+              <a-card class="card-item" v-for="item in filteredList" :key="item.id">
+                <div class="card-header">
+                  <a-tag color="red">已取消</a-tag>
+                  <span class="card-no">{{ item.serialNumber }}</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="就诊科室">{{ item.departmentName }}</a-descriptions-item>
+                  <a-descriptions-item label="就诊医生">{{ item.doctorName }}</a-descriptions-item>
+                  <a-descriptions-item label="原定时间">{{ item.visitDate }}</a-descriptions-item>
+                </a-descriptions>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无已取消记录" />
+          </a-spin>
         </a-tab-pane>
       </a-tabs>
     </div>
@@ -38,22 +77,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
+import { registrationApi, type Registration } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
-const activeTab = ref('upcoming')
-const hasData = ref(true)
+const authStore = useAuthStore()
+const activeTab = ref('PENDING')
+const loading = ref(false)
+const registrationList = ref<Registration[]>([])
 
-const upcomingList = [
-  {
-    id: 1,
-    status: '已预约',
-    queueNo: '排队号: A012',
-    department: '心内科',
-    doctor: '张主任',
-    time: '2026-05-15 09:00-09:30',
-  },
-]
+const filteredList = computed(() => {
+  return registrationList.value.filter(item => item.status === activeTab.value)
+})
+
+const fetchRegistrations = async () => {
+  if (!authStore.userId) return
+  
+  loading.value = true
+  try {
+    const res = await registrationApi.getRegistrations({ patientId: authStore.userId })
+    registrationList.value = res.content || res || []
+  } catch (error) {
+    console.error('获取挂号记录失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleCancel = async (id: number) => {
+  try {
+    await registrationApi.cancelRegistration(id)
+    message.success('取消成功')
+    fetchRegistrations()
+  } catch (error) {
+    console.error('取消挂号失败:', error)
+  }
+}
+
+const handleTabChange = () => {
+  fetchRegistrations()
+}
+
+const getStatusColor = (status: string) => {
+  const map: Record<string, string> = {
+    PENDING: 'blue',
+    COMPLETED: 'green',
+    CANCELLED: 'red',
+  }
+  return map[status] || 'default'
+}
+
+const getStatusText = (status: string) => {
+  const map: Record<string, string> = {
+    PENDING: '已预约',
+    COMPLETED: '已完成',
+    CANCELLED: '已取消',
+  }
+  return map[status] || status
+}
+
+onMounted(() => {
+  fetchRegistrations()
+})
 </script>
 
 <style scoped>
@@ -100,5 +187,12 @@ const upcomingList = [
 .card-no {
   font-size: 13px;
   color: #666;
+}
+
+.card-actions {
+  margin-top: 12px;
+  text-align: right;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 8px;
 }
 </style>

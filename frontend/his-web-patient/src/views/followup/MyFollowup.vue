@@ -9,34 +9,62 @@
     </header>
 
     <div class="content">
-      <a-tabs v-model:activeKey="activeTab">
-        <a-tab-pane key="upcoming" tab="待随访">
-          <a-card v-for="item in followupList" :key="item.id" class="card-item">
-            <div class="card-header">
-              <a-tag :color="item.type === '定期' ? 'blue' : 'orange'">{{ item.type }}</a-tag>
-              <span class="card-status">{{ item.status }}</span>
-            </div>
-            <a-descriptions :column="1" size="small">
-              <a-descriptions-item label="随访计划">{{ item.planName }}</a-descriptions-item>
-              <a-descriptions-item label="计划时间">{{ item.plannedDate }}</a-descriptions-item>
-              <a-descriptions-item label="负责医生">{{ item.doctor }}</a-descriptions-item>
-              <a-descriptions-item label="随访内容">{{ item.content }}</a-descriptions-item>
-            </a-descriptions>
-            <div class="card-actions">
-              <a-button v-if="item.status === '待随访'" type="primary" size="small" block @click="handleConfirm(item)">
-                确认随访
-              </a-button>
-            </div>
-          </a-card>
-          <a-empty v-if="followupList.length === 0" description="暂无待随访计划" />
+      <a-tabs v-model:activeKey="activeTab" @change="handleTabChange">
+        <a-tab-pane key="PENDING" tab="待随访">
+          <a-spin :spinning="loading">
+            <template v-if="pendingList.length > 0">
+              <a-card v-for="item in pendingList" :key="item.id" class="card-item">
+                <div class="card-header">
+                  <a-tag :color="getTypeColor(item.followupType)">{{ item.followupType }}</a-tag>
+                  <span class="card-status">待随访</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="随访计划">{{ item.planName }}</a-descriptions-item>
+                  <a-descriptions-item label="开始日期">{{ formatDate(item.startDate) }}</a-descriptions-item>
+                  <a-descriptions-item label="随访频率">{{ item.frequency }}</a-descriptions-item>
+                  <a-descriptions-item label="随访类型">{{ item.followupType }}</a-descriptions-item>
+                </a-descriptions>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无待随访计划" />
+          </a-spin>
         </a-tab-pane>
 
-        <a-tab-pane key="completed" tab="已完成">
-          <a-empty description="暂无已完成的随访" />
+        <a-tab-pane key="COMPLETED" tab="已完成">
+          <a-spin :spinning="loading">
+            <template v-if="completedList.length > 0">
+              <a-card v-for="item in completedList" :key="item.id" class="card-item">
+                <div class="card-header">
+                  <a-tag color="green">已完成</a-tag>
+                  <span class="card-status completed">已完成</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="随访计划">{{ item.planName }}</a-descriptions-item>
+                  <a-descriptions-item label="开始日期">{{ formatDate(item.startDate) }}</a-descriptions-item>
+                  <a-descriptions-item label="结束日期">{{ formatDate(item.endDate) }}</a-descriptions-item>
+                </a-descriptions>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无已完成的随访" />
+          </a-spin>
         </a-tab-pane>
 
-        <a-tab-pane key="missed" tab="已逾期">
-          <a-empty description="暂无逾期随访" />
+        <a-tab-pane key="OVERDUE" tab="已逾期">
+          <a-spin :spinning="loading">
+            <template v-if="overdueList.length > 0">
+              <a-card v-for="item in overdueList" :key="item.id" class="card-item">
+                <div class="card-header">
+                  <a-tag color="red">已逾期</a-tag>
+                  <span class="card-status overdue">已逾期</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="随访计划">{{ item.planName }}</a-descriptions-item>
+                  <a-descriptions-item label="计划结束">{{ formatDate(item.endDate) }}</a-descriptions-item>
+                </a-descriptions>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无逾期随访" />
+          </a-spin>
         </a-tab-pane>
       </a-tabs>
     </div>
@@ -44,36 +72,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { message } from 'ant-design-vue'
+import { ref, computed, onMounted } from 'vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
+import { followupApi, type FollowupPlan } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
-const activeTab = ref('upcoming')
+const authStore = useAuthStore()
+const activeTab = ref('PENDING')
+const loading = ref(false)
+const planList = ref<FollowupPlan[]>([])
 
-const followupList = [
-  {
-    id: 1,
-    planName: '高血压定期随访',
-    type: '定期',
-    status: '待随访',
-    plannedDate: '2026-05-25',
-    doctor: '张主任',
-    content: '测量血压、询问用药情况、调整治疗方案',
-  },
-  {
-    id: 2,
-    planName: '术后随访',
-    type: '临时',
-    status: '待随访',
-    plannedDate: '2026-05-18',
-    doctor: '李医生',
-    content: '伤口检查、恢复情况评估',
-  },
-]
+const pendingList = computed(() => planList.value.filter(item => item.status === 'PENDING'))
+const completedList = computed(() => planList.value.filter(item => item.status === 'COMPLETED'))
+const overdueList = computed(() => planList.value.filter(item => item.status === 'OVERDUE'))
 
-const handleConfirm = (item: { planName: string }) => {
-  message.success(`正在为您安排随访: ${item.planName}`)
+const fetchPlans = async () => {
+  if (!authStore.userId) return
+  
+  loading.value = true
+  try {
+    const res = await followupApi.getPlansByPatient(authStore.userId)
+    planList.value = Array.isArray(res) ? res : (res as any).content || []
+  } catch (error) {
+    console.error('获取随访计划失败:', error)
+  } finally {
+    loading.value = false
+  }
 }
+
+const handleTabChange = () => {
+  fetchPlans()
+}
+
+const getTypeColor = (type: string) => {
+  const map: Record<string, string> = {
+    '定期': 'blue',
+    '临时': 'orange',
+    '术后': 'purple',
+  }
+  return map[type] || 'default'
+}
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('zh-CN')
+}
+
+onMounted(() => {
+  fetchPlans()
+})
 </script>
 
 <style scoped>
@@ -122,7 +169,11 @@ const handleConfirm = (item: { planName: string }) => {
   color: #fa8c16;
 }
 
-.card-actions {
-  margin-top: 12px;
+.card-status.completed {
+  color: #52c41a;
+}
+
+.card-status.overdue {
+  color: #f5222d;
 }
 </style>

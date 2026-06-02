@@ -17,43 +17,43 @@ const routes = [
     path: '/registration',
     name: 'Registration',
     component: () => import('@/views/registration/Registration.vue'),
-    meta: { title: '在线挂号' },
+    meta: { title: '在线挂号', requiresAuth: true },
   },
   {
     path: '/appointments',
     name: 'Appointments',
     component: () => import('@/views/appointment/MyAppointments.vue'),
-    meta: { title: '我的挂号' },
+    meta: { title: '我的挂号', requiresAuth: true },
   },
   {
     path: '/consultation',
     name: 'Consultation',
     component: () => import('@/views/consultation/Consultation.vue'),
-    meta: { title: '在线问诊' },
+    meta: { title: '在线问诊', requiresAuth: true },
   },
   {
     path: '/prescriptions',
     name: 'Prescriptions',
     component: () => import('@/views/prescription/MyPrescriptions.vue'),
-    meta: { title: '我的处方' },
+    meta: { title: '我的处方', requiresAuth: true },
   },
   {
     path: '/bills',
     name: 'Bills',
     component: () => import('@/views/billing/MyBills.vue'),
-    meta: { title: '费用查询' },
+    meta: { title: '费用查询', requiresAuth: true },
   },
   {
     path: '/reports',
     name: 'Reports',
     component: () => import('@/views/report/MyReports.vue'),
-    meta: { title: '检查报告' },
+    meta: { title: '检查报告', requiresAuth: true },
   },
   {
     path: '/followup',
     name: 'Followup',
     component: () => import('@/views/followup/MyFollowup.vue'),
-    meta: { title: '我的随访' },
+    meta: { title: '我的随访', requiresAuth: true },
   },
   {
     path: '/profile',
@@ -68,10 +68,23 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach((to, from, next) => {
+  // 设置页面标题
   if (to.meta.title) {
     document.title = `${to.meta.title} — HIS 患者端`
   }
+
+  // 检查是否需要登录
+  if (to.meta.requiresAuth) {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      // 未登录，跳转到登录页
+      next({ path: '/login', query: { redirect: to.fullPath } })
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

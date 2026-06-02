@@ -9,69 +9,177 @@
     </header>
 
     <div class="content">
-      <a-tabs v-model:activeKey="activeTab">
+      <a-tabs v-model:activeKey="activeTab" @change="handleTabChange">
         <a-tab-pane key="all" tab="全部">
-          <a-card v-for="item in reportList" :key="item.id" class="card-item">
-            <div class="card-header">
-              <a-tag :color="item.status === '已完成' ? 'green' : 'blue'">{{ item.status }}</a-tag>
-              <span class="card-date">{{ item.date }}</span>
-            </div>
-            <a-descriptions :column="1" size="small">
-              <a-descriptions-item label="报告编号">{{ item.reportNo }}</a-descriptions-item>
-              <a-descriptions-item label="检查项目">{{ item.projectName }}</a-descriptions-item>
-              <a-descriptions-item label="检查科室">{{ item.department }}</a-descriptions-item>
-              <a-descriptions-item label="开单医生">{{ item.doctor }}</a-descriptions-item>
-            </a-descriptions>
-            <a-button block size="small" class="view-btn" :disabled="item.status !== '已完成'" @click="handleView(item)">
-              查看报告
-            </a-button>
-          </a-card>
-          <a-empty v-if="reportList.length === 0" description="暂无检查报告" />
+          <a-spin :spinning="loading">
+            <template v-if="reportList.length > 0">
+              <a-card v-for="item in reportList" :key="item.id" class="card-item">
+                <div class="card-header">
+                  <a-tag :color="getStatusColor(item.status)">{{ getStatusText(item.status) }}</a-tag>
+                  <span class="card-date">{{ formatDate(item.reportDate || item.createdAt) }}</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="报告编号">{{ item.reportNo }}</a-descriptions-item>
+                  <a-descriptions-item label="检查项目">{{ item.examinationName }}</a-descriptions-item>
+                  <a-descriptions-item label="检查类型">{{ item.examinationType }}</a-descriptions-item>
+                  <a-descriptions-item label="检查科室">{{ item.department }}</a-descriptions-item>
+                  <a-descriptions-item label="报告医生">{{ item.doctorName }}</a-descriptions-item>
+                </a-descriptions>
+                <a-button 
+                  block 
+                  size="small" 
+                  class="view-btn" 
+                  :disabled="item.status !== 'COMPLETED'" 
+                  @click="handleView(item)"
+                >
+                  查看报告
+                </a-button>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无检查报告" />
+          </a-spin>
         </a-tab-pane>
 
-        <a-tab-pane key="pending" tab="待检查">
-          <a-empty description="暂无待检查项目" />
+        <a-tab-pane key="PENDING" tab="待检查">
+          <a-spin :spinning="loading">
+            <template v-if="pendingList.length > 0">
+              <a-card v-for="item in pendingList" :key="item.id" class="card-item">
+                <div class="card-header">
+                  <a-tag color="blue">待检查</a-tag>
+                  <span class="card-date">{{ formatDate(item.createdAt) }}</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="检查项目">{{ item.examinationName }}</a-descriptions-item>
+                  <a-descriptions-item label="检查科室">{{ item.department }}</a-descriptions-item>
+                </a-descriptions>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无待检查项目" />
+          </a-spin>
         </a-tab-pane>
 
-        <a-tab-pane key="completed" tab="已完成">
-          <a-empty description="暂无已完成的报告" />
+        <a-tab-pane key="COMPLETED" tab="已完成">
+          <a-spin :spinning="loading">
+            <template v-if="completedList.length > 0">
+              <a-card v-for="item in completedList" :key="item.id" class="card-item">
+                <div class="card-header">
+                  <a-tag color="green">已完成</a-tag>
+                  <span class="card-date">{{ formatDate(item.reportDate) }}</span>
+                </div>
+                <a-descriptions :column="1" size="small">
+                  <a-descriptions-item label="报告编号">{{ item.reportNo }}</a-descriptions-item>
+                  <a-descriptions-item label="检查项目">{{ item.examinationName }}</a-descriptions-item>
+                  <a-descriptions-item label="报告医生">{{ item.doctorName }}</a-descriptions-item>
+                </a-descriptions>
+                <a-button block size="small" class="view-btn" @click="handleView(item)">
+                  查看报告
+                </a-button>
+              </a-card>
+            </template>
+            <a-empty v-else description="暂无已完成的报告" />
+          </a-spin>
         </a-tab-pane>
       </a-tabs>
     </div>
+
+    <!-- 报告详情弹窗 -->
+    <a-modal v-model:open="detailVisible" title="检查报告详情" :footer="null" width="600px">
+      <a-spin :spinning="detailLoading">
+        <template v-if="currentReport">
+          <a-descriptions :column="2" bordered size="small">
+            <a-descriptions-item label="报告编号" :span="2">{{ currentReport.reportNo }}</a-descriptions-item>
+            <a-descriptions-item label="检查项目">{{ currentReport.examinationName }}</a-descriptions-item>
+            <a-descriptions-item label="检查类型">{{ currentReport.examinationType }}</a-descriptions-item>
+            <a-descriptions-item label="检查科室">{{ currentReport.department }}</a-descriptions-item>
+            <a-descriptions-item label="报告医生">{{ currentReport.doctorName }}</a-descriptions-item>
+            <a-descriptions-item label="报告日期" :span="2">{{ formatDate(currentReport.reportDate) }}</a-descriptions-item>
+          </a-descriptions>
+          <a-divider />
+          <h4>检查结果</h4>
+          <p class="report-content">{{ currentReport.result || '暂无结果' }}</p>
+          <a-divider />
+          <h4>诊断结论</h4>
+          <p class="report-content">{{ currentReport.conclusion || '暂无结论' }}</p>
+        </template>
+      </a-spin>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { message } from 'ant-design-vue'
+import { ref, computed, onMounted } from 'vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
+import { reportApi, type ExaminationReport } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const activeTab = ref('all')
+const loading = ref(false)
+const reportList = ref<ExaminationReport[]>([])
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const currentReport = ref<ExaminationReport | null>(null)
 
-const reportList = [
-  {
-    id: 1,
-    reportNo: 'R20260511001',
-    projectName: '血常规',
-    department: '检验科',
-    doctor: '张主任',
-    date: '2026-05-11',
-    status: '已完成',
-  },
-  {
-    id: 2,
-    reportNo: 'R20260510002',
-    projectName: '心电图',
-    department: '心内科',
-    doctor: '张主任',
-    date: '2026-05-10',
-    status: '待检查',
-  },
-]
+const pendingList = computed(() => reportList.value.filter(item => item.status === 'PENDING'))
+const completedList = computed(() => reportList.value.filter(item => item.status === 'COMPLETED'))
 
-const handleView = (item: { reportNo: string }) => {
-  message.info(`正在加载报告 ${item.reportNo}`)
+const fetchReports = async () => {
+  if (!authStore.userId) return
+  
+  loading.value = true
+  try {
+    const res = await reportApi.getReportsByPatient(authStore.userId)
+    reportList.value = Array.isArray(res) ? res : (res as any).content || []
+  } catch (error) {
+    console.error('获取报告失败:', error)
+  } finally {
+    loading.value = false
+  }
 }
+
+const handleTabChange = () => {
+  fetchReports()
+}
+
+const handleView = async (item: ExaminationReport) => {
+  detailVisible.value = true
+  detailLoading.value = true
+  try {
+    const res = await reportApi.getReport(item.id)
+    currentReport.value = res
+  } catch (error) {
+    console.error('获取报告详情失败:', error)
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+const getStatusColor = (status: string) => {
+  const map: Record<string, string> = {
+    PENDING: 'blue',
+    COMPLETED: 'green',
+    CANCELLED: 'red',
+  }
+  return map[status] || 'default'
+}
+
+const getStatusText = (status: string) => {
+  const map: Record<string, string> = {
+    PENDING: '待检查',
+    COMPLETED: '已完成',
+    CANCELLED: '已取消',
+  }
+  return map[status] || status
+}
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('zh-CN')
+}
+
+onMounted(() => {
+  fetchReports()
+})
 </script>
 
 <style scoped>
@@ -122,5 +230,11 @@ const handleView = (item: { reportNo: string }) => {
 
 .view-btn {
   margin-top: 12px;
+}
+
+.report-content {
+  color: #666;
+  line-height: 1.8;
+  white-space: pre-wrap;
 }
 </style>

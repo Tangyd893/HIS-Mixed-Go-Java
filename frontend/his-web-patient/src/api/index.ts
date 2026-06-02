@@ -9,3 +9,15 @@ export type { RegisterRequest as RegistrationRequest, RegisterResponse, Registra
 
 export { pharmacyApi } from './pharmacy'
 export type { Drug, Prescription, PrescriptionItem } from './pharmacy'
+
+export { billingApi } from './billing'
+export type { BillItem, Payment, CreatePaymentRequest } from './billing'
+
+export { reportApi } from './report'
+export type { ExaminationReport } from './report'
+
+export { followupApi } from './followup'
+export type { FollowupPlan, FollowupRecord } from './followup'
+
+export { consultationApi } from './consultation'
+export type { Consultation, ConsultationMessage } from './consultation'
