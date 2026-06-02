@@ -56,6 +56,14 @@
           <template v-if="column.key === 'action'">
             <a-space>
               <a-button type="link" size="small" @click="handleViewDetail(record)">详情</a-button>
+              <a-popconfirm
+                :title="record.status === 1 ? '确定停用该患者？' : '确定启用该患者？'"
+                @confirm="handleToggleStatus(record)"
+              >
+                <a-button type="link" size="small">
+                  {{ record.status === 1 ? '停用' : '启用' }}
+                </a-button>
+              </a-popconfirm>
             </a-space>
           </template>
         </template>
@@ -74,8 +82,15 @@
         <a-descriptions-item label="年龄">{{ currentPatient.age }}</a-descriptions-item>
         <a-descriptions-item label="手机号">{{ currentPatient.phone }}</a-descriptions-item>
         <a-descriptions-item label="身份证号">{{ currentPatient.idCard }}</a-descriptions-item>
+        <a-descriptions-item label="血型" v-if="currentPatient.bloodType">{{ currentPatient.bloodType }}</a-descriptions-item>
+        <a-descriptions-item label="过敏史" v-if="currentPatient.allergies">{{ currentPatient.allergies }}</a-descriptions-item>
         <a-descriptions-item label="地址" :span="2">{{ currentPatient.address }}</a-descriptions-item>
-        <a-descriptions-item label="创建时间" :span="2">{{ currentPatient.createdAt }}</a-descriptions-item>
+        <a-descriptions-item label="状态">
+          <a-tag :color="currentPatient.status === 1 ? 'green' : 'red'">
+            {{ currentPatient.status === 1 ? '正常' : '停用' }}
+          </a-tag>
+        </a-descriptions-item>
+        <a-descriptions-item label="创建时间">{{ currentPatient.createdAt }}</a-descriptions-item>
       </a-descriptions>
     </a-drawer>
   </div>
@@ -84,26 +99,16 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { SearchOutlined } from '@ant-design/icons-vue'
-
-interface Patient {
-  id: number
-  name: string
-  gender: string
-  age: number
-  phone: string
-  idCard: string
-  address: string
-  status: number
-  createdAt: string
-}
+import { message } from 'ant-design-vue'
+import { patientApi, type Patient, type PatientQuery } from '@/api'
 
 const loading = ref(false)
 const drawerVisible = ref(false)
 const currentPatient = ref<Patient | null>(null)
 
-const queryForm = reactive({
+const queryForm = reactive<PatientQuery>({
   keyword: '',
-  status: undefined as number | undefined,
+  status: undefined,
 })
 
 const pagination = reactive({
@@ -125,20 +130,20 @@ const columns = [
   { title: '身份证号', dataIndex: 'idCard', key: 'idCard' },
   { title: '状态', key: 'status', width: 80 },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
-  { title: '操作', key: 'action', width: 100 },
+  { title: '操作', key: 'action', width: 150 },
 ]
 
 const fetchPatients = async () => {
   loading.value = true
   try {
-    // TODO: 调用实际API
-    // 模拟数据
-    patientList.value = [
-      { id: 1, name: '张三', gender: 'M', age: 35, phone: '13800138001', idCard: '110101199001011234', address: '北京市东城区', status: 1, createdAt: '2026-06-01 10:00:00' },
-      { id: 2, name: '李四', gender: 'F', age: 28, phone: '13800138002', idCard: '110101199202021234', address: '北京市西城区', status: 1, createdAt: '2026-06-01 11:00:00' },
-      { id: 3, name: '王五', gender: 'M', age: 45, phone: '13800138003', idCard: '110101198103031234', address: '北京市朝阳区', status: 1, createdAt: '2026-06-01 12:00:00' },
-    ]
-    pagination.total = 3
+    const res = await patientApi.getList({
+      keyword: queryForm.keyword || undefined,
+      status: queryForm.status,
+      page: pagination.current - 1,
+      size: pagination.pageSize,
+    })
+    patientList.value = res.content || []
+    pagination.total = res.totalElements || 0
   } catch (error) {
     console.error('获取患者列表失败:', error)
   } finally {
@@ -166,6 +171,17 @@ const handleTableChange = (pag: any) => {
 const handleViewDetail = (record: Patient) => {
   currentPatient.value = record
   drawerVisible.value = true
+}
+
+const handleToggleStatus = async (record: Patient) => {
+  try {
+    const newStatus = record.status === 1 ? 0 : 1
+    await patientApi.updateStatus(record.id, newStatus)
+    message.success('操作成功')
+    fetchPatients()
+  } catch (error) {
+    console.error('更新状态失败:', error)
+  }
 }
 
 onMounted(() => {

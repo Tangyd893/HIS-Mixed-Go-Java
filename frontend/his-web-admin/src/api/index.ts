@@ -12,3 +12,9 @@ export type { Drug, DrugQuery, DrugForm } from './drug'
 
 export { departmentApi } from './department'
 export type { Department, DepartmentForm } from './department'
+
+export { statisticsApi } from './statistics'
+export type { DashboardStats, DepartmentStat, TrendPoint, Registration } from './statistics'
+
+export { patientApi } from './patient'
+export type { Patient, PatientQuery } from './patient'
