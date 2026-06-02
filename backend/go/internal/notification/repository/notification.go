@@ -66,7 +66,7 @@ func (r *NotificationRepository) CreateTemplate(template *model.NotificationTemp
 // GetTemplateByCode 按编码查询模板
 func (r *NotificationRepository) GetTemplateByCode(code string) (*model.NotificationTemplate, error) {
 	var template model.NotificationTemplate
-	err := r.db.Where("code = ?", code).First(&template).Error
+	err := r.db.Where("template_code = ?", code).First(&template).Error
 	if err != nil {
 		return nil, err
 	}
