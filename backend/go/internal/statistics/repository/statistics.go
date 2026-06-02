@@ -25,7 +25,7 @@ func (r *StatisticsRepository) CreateSnapshot(snapshot *model.StatSnapshot) erro
 // GetSnapshot 查询统计快照
 func (r *StatisticsRepository) GetSnapshot(statType, statDate string) (*model.StatSnapshot, error) {
 	var snapshot model.StatSnapshot
-	err := r.db.Where("stat_type = ? AND stat_date = ?", statType, statDate).First(&snapshot).Error
+	err := r.db.Where("stat_type = ? AND DATE(stat_date) = ?", statType, statDate).First(&snapshot).Error
 	if err != nil {
 		return nil, err
 	}
@@ -67,11 +67,13 @@ func (r *StatisticsRepository) GetRegistrationStats(startDate, endDate string) (
 	result["total"] = total
 
 	var completed int64
-	query.Where("status = ?", "COMPLETED").Count(&completed)
+	r.db.Table("registrations").Where("created_at >= ? AND created_at <= ? AND status = ?",
+		startDate, endDate+" 23:59:59", "COMPLETED").Count(&completed)
 	result["completed"] = completed
 
 	var cancelled int64
-	query.Where("status = ?", "CANCELLED").Count(&cancelled)
+	r.db.Table("registrations").Where("created_at >= ? AND created_at <= ? AND status = ?",
+		startDate, endDate+" 23:59:59", "CANCELLED").Count(&cancelled)
 	result["cancelled"] = cancelled
 
 	return result, nil
@@ -204,7 +206,7 @@ func (r *StatisticsRepository) GetTrendData(metric, startDate, endDate, granular
 		for _, d := range data {
 			results = append(results, map[string]interface{}{
 				"date":  d.Date,
-				"value": d.Count,
+				"value": float64(d.Count),
 			})
 		}
 
@@ -238,7 +240,7 @@ func (r *StatisticsRepository) GetTrendData(metric, startDate, endDate, granular
 		for _, d := range data {
 			results = append(results, map[string]interface{}{
 				"date":  d.Date,
-				"value": d.Count,
+				"value": float64(d.Count),
 			})
 		}
 	}

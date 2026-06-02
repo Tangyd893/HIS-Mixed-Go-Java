@@ -2,18 +2,21 @@ server:
   name: "his-gateway"
   http_port: 8080
 
-database:
-  host: "localhost"
-  port: 5432
-  user: "his_admin"
-  password: "change_me_123"
-  sslmode: "disable"
-  dbname: ""
-
-redis:
-  addr: "localhost:6379"
-  password: "change_me_456"
-  db: 0
-
-rabbitmq:
-  url: "amqp://admin:change_me_789@localhost:5672/"
+routes:
+  auth: "http://localhost:8081"
+  user: "http://localhost:8082"
+  registration: "http://localhost:8083"
+  clinic: "http://localhost:8084"
+  prescription: "http://localhost:8085"
+  billing: "http://localhost:8086"
+  pharmacy: "http://localhost:8087"
+  examination: "http://localhost:8088"
+  inpatient: "http://localhost:8089"
+  schedule: "http://localhost:8090"
+  outpatient: "http://localhost:8091"
+  followup: "http://localhost:8092"
+  health-record: "http://localhost:8093"
+  notification: "http://localhost:8094"
+  statistics: "http://localhost:8095"
+  system: "http://localhost:8096"
+  emr: "http://localhost:8097"

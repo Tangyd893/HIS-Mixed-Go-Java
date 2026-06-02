@@ -1,130 +1,136 @@
-// Package router 网关路由注册
 package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/his-mixed/go/internal/gateway/handler"
 	"github.com/his-mixed/go/pkg/health"
 )
 
-// SetupRouter 为每个下游服务注册 API 路由分组
-func SetupRouter(r *gin.Engine) {
+func SetupRouter(r *gin.Engine, proxies map[string]gin.HandlerFunc) {
 	r.GET("/api/health", health.Handler)
 	r.GET("/api/ready", health.ReadyHandler)
 	r.GET("/api/ping", health.PingHandler)
 
+	proxy := func(name string) gin.HandlerFunc {
+		if h, ok := proxies[name]; ok {
+			return h
+		}
+		return func(c *gin.Context) {
+			c.JSON(503, gin.H{"code": 503, "message": "服务未配置: " + name})
+		}
+	}
+
 	auth := r.Group("/api/auth")
 	{
-		auth.POST("/login", handler.ProxyAuth)
-		auth.POST("/refresh", handler.ProxyAuth)
-		auth.GET("/captcha", handler.ProxyAuth)
+		auth.POST("/login", proxy("auth"))
+		auth.POST("/refresh", proxy("auth"))
+		auth.GET("/captcha", proxy("auth"))
 	}
 
 	user := r.Group("/api/user")
 	{
-		user.GET("/patients", handler.ProxyUser)
-		user.GET("/patients/:id", handler.ProxyUser)
-		user.POST("/patients", handler.ProxyUser)
-		user.PUT("/patients/:id", handler.ProxyUser)
-		user.GET("/employees", handler.ProxyUser)
-		user.GET("/departments", handler.ProxyUser)
+		user.GET("/patients", proxy("user"))
+		user.GET("/patients/:id", proxy("user"))
+		user.POST("/patients", proxy("user"))
+		user.PUT("/patients/:id", proxy("user"))
+		user.GET("/employees", proxy("user"))
+		user.GET("/departments", proxy("user"))
 	}
 
 	reg := r.Group("/api/registration")
 	{
-		reg.GET("/schedules", handler.ProxyRegistration)
-		reg.POST("/appointments", handler.ProxyRegistration)
-		reg.GET("/appointments", handler.ProxyRegistration)
-		reg.GET("/queue", handler.ProxyRegistration)
+		reg.GET("/schedules", proxy("registration"))
+		reg.POST("/appointments", proxy("registration"))
+		reg.GET("/appointments", proxy("registration"))
+		reg.GET("/queue", proxy("registration"))
 	}
 
 	clinic := r.Group("/api/clinic")
 	{
-		clinic.POST("/encounters", handler.ProxyClinic)
-		clinic.GET("/encounters", handler.ProxyClinic)
-		clinic.POST("/diagnoses", handler.ProxyClinic)
+		clinic.POST("/encounters", proxy("clinic"))
+		clinic.GET("/encounters", proxy("clinic"))
+		clinic.POST("/diagnoses", proxy("clinic"))
 	}
 
 	pres := r.Group("/api/prescription")
 	{
-		pres.POST("/prescriptions", handler.ProxyPrescription)
-		pres.GET("/prescriptions", handler.ProxyPrescription)
+		pres.POST("/prescriptions", proxy("prescription"))
+		pres.GET("/prescriptions", proxy("prescription"))
 	}
 
 	bill := r.Group("/api/billing")
 	{
-		bill.POST("/calculate", handler.ProxyBilling)
-		bill.POST("/payments", handler.ProxyBilling)
+		bill.POST("/calculate", proxy("billing"))
+		bill.POST("/payments", proxy("billing"))
 	}
 
 	pharm := r.Group("/api/pharmacy")
 	{
-		pharm.GET("/drugs", handler.ProxyPharmacy)
-		pharm.POST("/dispense", handler.ProxyPharmacy)
-		pharm.GET("/dispense-queue", handler.ProxyPharmacy)
+		pharm.GET("/drugs", proxy("pharmacy"))
+		pharm.POST("/dispense", proxy("pharmacy"))
+		pharm.GET("/dispense-queue", proxy("pharmacy"))
 	}
 
 	exam := r.Group("/api/examination")
 	{
-		exam.GET("/requests", handler.ProxyExamination)
-		exam.POST("/reports", handler.ProxyExamination)
-		exam.GET("/reports/:id", handler.ProxyExamination)
+		exam.GET("/requests", proxy("examination"))
+		exam.POST("/reports", proxy("examination"))
+		exam.GET("/reports/:id", proxy("examination"))
 	}
 
 	inp := r.Group("/api/inpatient")
 	{
-		inp.POST("/admissions", handler.ProxyInpatient)
-		inp.GET("/beds", handler.ProxyInpatient)
-		inp.POST("/orders", handler.ProxyInpatient)
-		inp.POST("/discharges", handler.ProxyInpatient)
+		inp.POST("/admissions", proxy("inpatient"))
+		inp.GET("/beds", proxy("inpatient"))
+		inp.POST("/orders", proxy("inpatient"))
+		inp.POST("/discharges", proxy("inpatient"))
 	}
 
 	sched := r.Group("/api/schedule")
 	{
-		sched.GET("/plans", handler.ProxySchedule)
-		sched.POST("/slots/generate", handler.ProxySchedule)
-		sched.GET("/slots", handler.ProxySchedule)
+		sched.GET("/plans", proxy("schedule"))
+		sched.POST("/slots/generate", proxy("schedule"))
+		sched.GET("/slots", proxy("schedule"))
 	}
 
 	out := r.Group("/api/outpatient")
 	{
-		out.POST("/consultations", handler.ProxyOutpatient)
-		out.GET("/consultations/:id", handler.ProxyOutpatient)
+		out.POST("/consultations", proxy("outpatient"))
+		out.GET("/consultations/:id", proxy("outpatient"))
 	}
 
 	fu := r.Group("/api/followup")
 	{
-		fu.GET("/plans", handler.ProxyFollowup)
-		fu.POST("/records", handler.ProxyFollowup)
+		fu.GET("/plans", proxy("followup"))
+		fu.POST("/records", proxy("followup"))
 	}
 
 	hr := r.Group("/api/health-record")
 	{
-		hr.GET("/patients/:id/overview", handler.ProxyHealthRecord)
+		hr.GET("/patients/:id/overview", proxy("health-record"))
 	}
 
 	notify := r.Group("/api/notification")
 	{
-		notify.POST("/send", handler.ProxyNotification)
-		notify.GET("/templates", handler.ProxyNotification)
+		notify.POST("/send", proxy("notification"))
+		notify.GET("/templates", proxy("notification"))
 	}
 
 	stat := r.Group("/api/statistics")
 	{
-		stat.GET("/dashboard", handler.ProxyStatistics)
-		stat.GET("/registration-trend", handler.ProxyStatistics)
+		stat.GET("/dashboard", proxy("statistics"))
+		stat.GET("/registration-trend", proxy("statistics"))
 	}
 
 	sys := r.Group("/api/system")
 	{
-		sys.GET("/dict/types", handler.ProxySystem)
-		sys.GET("/configs", handler.ProxySystem)
-		sys.GET("/audit-logs", handler.ProxySystem)
+		sys.GET("/dict/types", proxy("system"))
+		sys.GET("/configs", proxy("system"))
+		sys.GET("/audit-logs", proxy("system"))
 	}
 
 	emr := r.Group("/api/emr")
 	{
-		emr.POST("/records", handler.ProxyEMR)
-		emr.GET("/records/:id", handler.ProxyEMR)
+		emr.POST("/records", proxy("emr"))
+		emr.GET("/records/:id", proxy("emr"))
 	}
 }

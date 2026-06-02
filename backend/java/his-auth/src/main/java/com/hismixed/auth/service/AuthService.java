@@ -121,14 +121,51 @@ public class AuthService {
             throw new RuntimeException("用户不存在");
         }
 
+        if (user.getStatus() != 1) {
+            throw new RuntimeException("账号已禁用");
+        }
+
         // 撤销旧令牌
         token.setRevoked(true);
         refreshTokenRepository.updateById(token);
 
-        // 生成新令牌
-        LoginRequest request = new LoginRequest();
-        request.setUsername(user.getUsername());
-        request.setPassword(""); // 刷新时不需要密码
-        return login(request);
+        // 查询角色
+        List<Role> roles = roleRepository.selectRolesByUserId(user.getId());
+        List<String> roleCodes = roles.stream().map(Role::getCode).toList();
+
+        // 生成新 AccessToken
+        SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        String accessToken = Jwts.builder()
+            .setSubject(user.getUsername())
+            .claim("userId", user.getId())
+            .claim("realName", user.getRealName())
+            .claim("roles", roleCodes)
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration * 1000))
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact();
+
+        // 生成新 RefreshToken
+        String newRefreshToken = UUID.randomUUID().toString().replace("-", "");
+        RefreshToken newToken = new RefreshToken();
+        newToken.setUserId(user.getId());
+        newToken.setToken(newRefreshToken);
+        newToken.setExpiresAt(LocalDateTime.now().plusDays(7));
+        newToken.setRevoked(false);
+        refreshTokenRepository.insert(newToken);
+
+        // 构建响应
+        LoginResponse response = new LoginResponse();
+        response.setAccessToken(accessToken);
+        response.setRefreshToken(newRefreshToken);
+        response.setTokenType("Bearer");
+        response.setExpiresIn(jwtExpiration);
+        response.setUserId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setRealName(user.getRealName());
+        response.setRoles(roleCodes);
+        response.setPermissions(new ArrayList<>());
+
+        return response;
     }
 }

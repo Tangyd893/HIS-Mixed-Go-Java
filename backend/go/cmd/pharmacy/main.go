@@ -1,9 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/his-mixed/go/internal/pharmacy/handler"
@@ -11,12 +17,11 @@ import (
 	"github.com/his-mixed/go/internal/pharmacy/service"
 	"github.com/his-mixed/go/pkg/config"
 	"github.com/his-mixed/go/pkg/database"
+	pb "github.com/his-mixed/go/pkg/grpc/pharmacy"
 	"github.com/his-mixed/go/pkg/health"
 	"github.com/his-mixed/go/pkg/middleware"
 	"github.com/his-mixed/go/pkg/redis"
-	pb "github.com/his-mixed/go/pkg/grpc/pharmacy"
 	"google.golang.org/grpc"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -43,47 +48,67 @@ func main() {
 	defer database.Close()
 
 	// 连接Redis
-	// redis.Connect 内部设置全局 redis.Client
 	_, err = redis.Connect(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
 	if err != nil {
 		log.Fatalf("连接Redis失败: %v", err)
 	}
 
-	// 启动HTTP服务
-	go startHTTP(cfg.Server.HTTPPort)
-
-	// 启动gRPC服务
-	startGRPC(cfg.Server.GRPCPort, db)
-}
-
-func startHTTP(port int) {
-	r := gin.New()
-	r.Use(middleware.Recovery(), middleware.RequestID(), middleware.Logger())
-	r.GET("/api/health", health.Handler)
-	r.GET("/api/ping", health.PingHandler)
-	log.Printf("药房服务 HTTP 启动在端口 %d", port)
-	if err := r.Run(fmt.Sprintf(":%d", port)); err != nil {
-		log.Printf("HTTP 启动失败: %v", err)
-	}
-}
-
-func startGRPC(port int, db *gorm.DB) {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("监听失败: %v", err)
-	}
-	s := grpc.NewServer()
-
-	// 初始化组件
+	// 初始化业务组件
 	repo := repository.NewPharmacyRepository(db)
 	svc := service.NewPharmacyService(repo)
 	h := handler.NewPharmacyHandler(svc)
 
-	// 注册gRPC服务
+	// 启动HTTP服务
+	httpSrv := startHTTPServer(cfg.Server.HTTPPort)
+
+	// 启动gRPC服务
+	grpcSrv, grpcLis := startGRPCServer(cfg.Server.GRPCPort, h)
+
+	// 优雅关闭
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("收到关闭信号，开始优雅关闭...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := httpSrv.Shutdown(ctx); err != nil {
+		log.Printf("HTTP 服务关闭失败: %v", err)
+	}
+	grpcSrv.GracefulStop()
+	grpcLis.Close()
+	log.Println("药房管理服务已关闭")
+}
+
+func startHTTPServer(port int) *http.Server {
+	r := gin.New()
+	r.Use(middleware.Recovery(), middleware.RequestID(), middleware.Logger())
+	r.GET("/api/health", health.Handler)
+	r.GET("/api/ping", health.PingHandler)
+
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
+	go func() {
+		log.Printf("药房服务 HTTP 启动在端口 %d", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("HTTP 服务启动失败: %v", err)
+		}
+	}()
+	return srv
+}
+
+func startGRPCServer(port int, h *handler.PharmacyHandler) (*grpc.Server, net.Listener) {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("gRPC 监听失败: %v", err)
+	}
+	s := grpc.NewServer()
 	pb.RegisterPharmacyServiceServer(s, h)
 
-	log.Printf("药房服务 gRPC 启动在端口 %d", port)
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("gRPC 失败: %v", err)
-	}
+	go func() {
+		log.Printf("药房服务 gRPC 启动在端口 %d", port)
+		if err := s.Serve(lis); err != nil {
+			log.Printf("gRPC 服务启动失败: %v", err)
+		}
+	}()
+	return s, lis
 }
