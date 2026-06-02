@@ -19,7 +19,22 @@ VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- ============================================================
--- 2. 医生用户账号
+-- 2. 患者用户账号
+-- ============================================================
+INSERT INTO sys_user (username, password, real_name, phone, email, status, create_time, update_time)
+VALUES
+('patient01', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '张三', '13900000001', 'patient01@hismixed.com', 1, now(), now()),
+('patient02', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李四', '13900000002', 'patient02@hismixed.com', 1, now(), now())
+ON CONFLICT (username) DO NOTHING;
+
+-- 患者角色关联
+INSERT INTO sys_user_role (user_id, role_id)
+SELECT u.id, r.id FROM sys_user u, sys_role r
+WHERE u.username LIKE 'patient%' AND r.role_code = 'PATIENT'
+ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- 3. 医生用户账号
 -- ============================================================
 INSERT INTO sys_user (username, password, real_name, phone, email, status, create_time, update_time)
 VALUES
@@ -99,13 +114,21 @@ ON CONFLICT (code) DO NOTHING;
 -- ============================================================
 -- 6. 患者数据
 -- ============================================================
-INSERT INTO patient (name, gender, birth_date, phone, id_card, address, status, create_time, update_time)
+INSERT INTO patient (user_id, name, gender, birth_date, phone, id_card, address, status, create_time, update_time)
+SELECT u.id, '张三', 'M', '1990-01-15', '13900000001', '110101199001150011', '北京市东城区XX小区1号楼101', 1, now(), now()
+FROM sys_user u WHERE u.username = 'patient01'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO patient (user_id, name, gender, birth_date, phone, id_card, address, status, create_time, update_time)
+SELECT u.id, '李四', 'F', '1985-06-20', '13900000002', '110101198506200022', '北京市西城区XX路2号', 1, now(), now()
+FROM sys_user u WHERE u.username = 'patient02'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO patient (user_id, name, gender, birth_date, phone, id_card, address, status, create_time, update_time)
 VALUES
-('张三', 'M', '1990-01-15', '13900000001', '110101199001150011', '北京市东城区XX小区1号楼101', 1, now(), now()),
-('李四', 'F', '1985-06-20', '13900000002', '110101198506200022', '北京市西城区XX路2号', 1, now(), now()),
-('王五', 'M', '1978-03-08', '13900000003', '110101197803080033', '北京市朝阳区XX街3号', 1, now(), now()),
-('赵六', 'F', '1995-11-25', '13900000004', '110101199511250044', '北京市海淀区XX路4号', 1, now(), now()),
-('钱七', 'M', '2000-08-10', '13900000005', '110101200008100055', '北京市丰台区XX小区5号楼', 1, now(), now())
+(NULL, '王五', 'M', '1978-03-08', '13900000003', '110101197803080033', '北京市朝阳区XX街3号', 1, now(), now()),
+(NULL, '赵六', 'F', '1995-11-25', '13900000004', '110101199511250044', '北京市海淀区XX路4号', 1, now(), now()),
+(NULL, '钱七', 'M', '2000-08-10', '13900000005', '110101200008100055', '北京市丰台区XX小区5号楼', 1, now(), now())
 ON CONFLICT DO NOTHING;
 
 -- ============================================================

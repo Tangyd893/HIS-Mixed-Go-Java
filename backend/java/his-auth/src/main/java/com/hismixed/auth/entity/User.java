@@ -21,6 +21,5 @@ public class User {
     private LocalDateTime passwordChangedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    @TableLogic
     private LocalDateTime deletedAt;
 }

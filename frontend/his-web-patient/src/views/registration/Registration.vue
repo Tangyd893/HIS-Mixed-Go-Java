@@ -72,12 +72,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { LeftOutlined, RightOutlined, MedicineBoxOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
-import { scheduleApi, registrationApi, type ScheduleSlot } from '@/api'
+import { scheduleApi, registrationApi, departmentApi, type ScheduleSlot } from '@/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -101,13 +101,24 @@ interface Doctor {
   fee: number
 }
 
-const departments = ref<Department[]>([
-  { label: '心内科', value: 1, desc: '诊治心脏及血管相关疾病' },
-  { label: '呼吸内科', value: 2, desc: '诊治呼吸系统相关疾病' },
-  { label: '消化内科', value: 3, desc: '诊治消化系统相关疾病' },
-  { label: '神经内科', value: 4, desc: '诊治神经系统相关疾病' },
-  { label: '骨科', value: 5, desc: '诊治骨骼及关节相关疾病' },
-])
+const departments = ref<Department[]>([])
+
+const loadDepartments = async () => {
+  try {
+    const res = await departmentApi.getList()
+    departments.value = (res || []).map(dept => ({
+      label: dept.name,
+      value: dept.id,
+      desc: `${dept.name}专科`
+    }))
+  } catch (error) {
+    message.error('获取科室列表失败')
+  }
+}
+
+onMounted(() => {
+  loadDepartments()
+})
 
 const doctors = ref<Doctor[]>([])
 const slots = ref<ScheduleSlot[]>([])

@@ -97,8 +97,8 @@ const fetchRegistrations = async () => {
   
   loading.value = true
   try {
-    const res = await registrationApi.getRegistrations({ patientId: authStore.userId })
-    registrationList.value = res.content || res || []
+    const res = await registrationApi.getRegistrations(authStore.userId!)
+    registrationList.value = res.list || res || []
   } catch (error) {
     console.error('获取挂号记录失败:', error)
   } finally {

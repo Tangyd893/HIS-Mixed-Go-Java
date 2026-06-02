@@ -21,3 +21,6 @@ export type { FollowupPlan, FollowupRecord } from './followup'
 
 export { consultationApi } from './consultation'
 export type { Consultation, ConsultationMessage } from './consultation'
+
+export { departmentApi } from './department'
+export type { Department } from './department'

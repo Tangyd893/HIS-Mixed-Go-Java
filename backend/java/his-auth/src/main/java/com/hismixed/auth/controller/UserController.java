@@ -81,4 +81,12 @@ public class UserController {
             return ResponseEntity.internalServerError().body(error);
         }
     }
+
+    @GetMapping("/debug/password")
+    public ResponseEntity<?> debugPassword(@RequestParam String raw, @RequestParam String encoded) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("matches", passwordEncoder.matches(raw, encoded));
+        result.put("encoderClass", passwordEncoder.getClass().getName());
+        return ResponseEntity.ok(result);
+    }
 }

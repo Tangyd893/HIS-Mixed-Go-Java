@@ -13,7 +13,7 @@
         <div class="user-info">
           <a-avatar :size="64" icon="user" />
           <div class="user-detail">
-            <span class="user-name" v-if="authStore.isLoggedIn">{{ authStore.realName || '患者' }}</span>
+            <span class="user-name" v-if="authStore.isLoggedIn">{{ authStore.userInfo?.realName || '患者' }}</span>
             <span class="user-name" v-else>未登录</span>
             <span class="user-label" @click="$router.push('/login')" v-if="!authStore.isLoggedIn">点击登录</span>
             <a-tag v-else color="green" size="small">已认证</a-tag>
@@ -24,10 +24,10 @@
       <a-card class="menu-card" title="账户信息" v-if="authStore.isLoggedIn">
         <a-list :split="true">
           <a-list-item>
-            <a-list-item-meta title="姓名" :description="authStore.realName || '-'" />
+            <a-list-item-meta title="姓名" :description="authStore.userInfo?.realName || '-'" />
           </a-list-item>
           <a-list-item>
-            <a-list-item-meta title="用户名" :description="authStore.username || '-'" />
+            <a-list-item-meta title="用户名" :description="authStore.userInfo?.username || '-'" />
           </a-list-item>
           <a-list-item>
             <a-list-item-meta title="用户ID" :description="String(authStore.userId) || '-'" />

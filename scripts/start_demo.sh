@@ -21,7 +21,7 @@ fi
 # 1. 启动基础设施
 echo -e "${GREEN}[1/5] 启动基础设施...${NC}"
 cd docker
-docker-compose up -d postgres redis rabbitmq
+docker-compose up -d postgresql redis rabbitmq
 cd ..
 
 # 等待数据库就绪
@@ -44,7 +44,8 @@ fi
 cd ../..
 
 # 4. 启动后端服务
-echo -e "${GREEN}[4/5] 启动后端服务...${cd backend/go"
+echo -e "${GREEN}[4/5] 启动后端服务...${NC}"
+cd backend/go
 # 这里可以添加实际的服务启动命令
 # go run cmd/gateway/main.go &
 # go run cmd/registration/main.go &

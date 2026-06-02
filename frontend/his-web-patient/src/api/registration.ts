@@ -26,10 +26,14 @@ export interface Registration {
   registrationType: string
   status: string
   queueNumber: number
+  serialNumber: string
   symptom: string
   registerDate: string
+  visitDate: string
   timeSlot: string
   fee: number
+  departmentName: string
+  doctorName: string
   createdAt: string
 }
 

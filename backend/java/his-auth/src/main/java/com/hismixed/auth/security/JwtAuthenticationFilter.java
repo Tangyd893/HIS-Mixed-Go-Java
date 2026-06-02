@@ -34,11 +34,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = header.substring(7);
             try {
                 SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-                Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(key)
+                Claims claims = Jwts.parser()
+                        .verifyWith(key)
                         .build()
-                        .parseClaimsJws(token)
-                        .getBody();
+                        .parseSignedClaims(token)
+                        .getPayload();
 
                 String username = claims.getSubject();
                 @SuppressWarnings("unchecked")

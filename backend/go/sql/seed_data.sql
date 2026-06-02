@@ -13,7 +13,8 @@ VALUES
 ('NURSE', '护士', '护理人员', 1, now(), now()),
 ('PHARMACIST', '药剂师', '药房工作人员', 1, now(), now()),
 ('CASHIER', '收费员', '挂号/收费窗口人员', 1, now(), now()),
-('TECHNICIAN', '医技人员', '检查/检验科室人员', 1, now(), now())
+('TECHNICIAN', '医技人员', '检查/检验科室人员', 1, now(), now()),
+('PATIENT', '患者', '门诊/住院患者', 1, now(), now())
 ON CONFLICT (role_code) DO NOTHING;
 
 -- 管理员角色关联

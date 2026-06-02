@@ -42,6 +42,7 @@ CREATE INDEX idx_employees_status ON employees(status);
 
 CREATE TABLE IF NOT EXISTS patients (
     id                  BIGSERIAL       PRIMARY KEY,
+    user_id             BIGINT,
     name                VARCHAR(50)     NOT NULL,
     gender              SMALLINT        NOT NULL,
     birth_date          DATE,
@@ -56,7 +57,8 @@ CREATE TABLE IF NOT EXISTS patients (
     emergency_phone     VARCHAR(20),
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at          TIMESTAMP
+    deleted_at          TIMESTAMP,
+    CONSTRAINT fk_patients_user FOREIGN KEY (user_id) REFERENCES sys_user(id)
 );
 
 CREATE INDEX idx_patients_phone ON patients(phone);

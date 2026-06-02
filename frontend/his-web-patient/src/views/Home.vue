@@ -12,8 +12,9 @@
         <div class="greeting-content">
           <a-avatar :size="56" icon="user" />
           <div class="greeting-text">
-            <span class="greeting-label">早上好</span>
-            <span class="greeting-name">点击登录</span>
+            <span class="greeting-label">{{ greetingText }}</span>
+            <span class="greeting-name" v-if="authStore.isLoggedIn">{{ authStore.userInfo?.realName || '用户' }}</span>
+            <span class="greeting-name" v-else @click="$router.push('/login')">点击登录</span>
           </div>
         </div>
       </a-card>
@@ -59,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import {
   UserOutlined,
   RightOutlined,
@@ -71,6 +73,16 @@ import {
   HeartOutlined,
   MessageOutlined,
 } from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+
+const greetingText = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return '早上好'
+  if (hour < 18) return '下午好'
+  return '晚上好'
+})
 
 const quickActions = [
   { label: '在线挂号', path: '/registration', icon: FormOutlined, color: '#1890ff' },
