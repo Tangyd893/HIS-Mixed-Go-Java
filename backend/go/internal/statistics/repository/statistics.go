@@ -176,11 +176,28 @@ func (r *StatisticsRepository) GetDashboardStats(period string, departmentID int
 	rxQuery.Count(&totalPrescriptions)
 	result["total_prescriptions"] = totalPrescriptions
 
+	// 住院量
+	var totalInpatients int64
+	r.db.Table("inpatient_admissions").Where("created_at BETWEEN ? AND ?", startDate, endDate).Count(&totalInpatients)
+	result["total_inpatients"] = totalInpatients
+
 	// 总收入
 	var totalRevenue float64
 	r.db.Table("payments").Where("created_at BETWEEN ? AND ?", startDate, endDate).
 		Select("COALESCE(SUM(amount), 0)").Scan(&totalRevenue)
 	result["total_revenue"] = totalRevenue
+
+	// 科室维度统计
+	var deptStats []map[string]interface{}
+	deptQuery := r.db.Table("encounters").
+		Select("department_id, COUNT(*) as visit_count").
+		Where("created_at BETWEEN ? AND ?", startDate, endDate).
+		Group("department_id")
+	if departmentID > 0 {
+		deptQuery = deptQuery.Where("department_id = ?", departmentID)
+	}
+	deptQuery.Scan(&deptStats)
+	result["dept_stats"] = deptStats
 
 	return result, nil
 }
@@ -189,6 +206,8 @@ func (r *StatisticsRepository) GetDashboardStats(period string, departmentID int
 func (r *StatisticsRepository) GetTrendData(metric, startDate, endDate, granularity string, departmentID int64) ([]map[string]interface{}, error) {
 	var results []map[string]interface{}
 
+	dateExpr, groupExpr := trendDateExpr(granularity)
+
 	switch metric {
 	case "门诊量":
 		var data []struct {
@@ -196,12 +215,12 @@ func (r *StatisticsRepository) GetTrendData(metric, startDate, endDate, granular
 			Count int64
 		}
 		query := r.db.Table("encounters").
-			Select("DATE(created_at) as date, COUNT(*) as count").
+			Select(dateExpr+" as date, COUNT(*) as count").
 			Where("created_at BETWEEN ? AND ?", startDate, endDate+" 23:59:59")
 		if departmentID > 0 {
 			query = query.Where("department_id = ?", departmentID)
 		}
-		query.Group("DATE(created_at)").Order("date").Scan(&data)
+		query.Group(groupExpr).Order("date").Scan(&data)
 
 		for _, d := range data {
 			results = append(results, map[string]interface{}{
@@ -216,9 +235,9 @@ func (r *StatisticsRepository) GetTrendData(metric, startDate, endDate, granular
 			Amount float64
 		}
 		r.db.Table("payments").
-			Select("DATE(created_at) as date, COALESCE(SUM(amount), 0) as amount").
+			Select(dateExpr+" as date, COALESCE(SUM(amount), 0) as amount").
 			Where("created_at BETWEEN ? AND ?", startDate, endDate+" 23:59:59").
-			Group("DATE(created_at)").Order("date").Scan(&data)
+			Group(groupExpr).Order("date").Scan(&data)
 
 		for _, d := range data {
 			results = append(results, map[string]interface{}{
@@ -233,9 +252,9 @@ func (r *StatisticsRepository) GetTrendData(metric, startDate, endDate, granular
 			Count int64
 		}
 		r.db.Table("prescriptions").
-			Select("DATE(created_at) as date, COUNT(*) as count").
+			Select(dateExpr+" as date, COUNT(*) as count").
 			Where("created_at BETWEEN ? AND ?", startDate, endDate+" 23:59:59").
-			Group("DATE(created_at)").Order("date").Scan(&data)
+			Group(groupExpr).Order("date").Scan(&data)
 
 		for _, d := range data {
 			results = append(results, map[string]interface{}{
@@ -246,6 +265,18 @@ func (r *StatisticsRepository) GetTrendData(metric, startDate, endDate, granular
 	}
 
 	return results, nil
+}
+
+// trendDateExpr 根据粒度返回SQL日期表达式和GROUP BY表达式
+func trendDateExpr(granularity string) (selectExpr, groupExpr string) {
+	switch granularity {
+	case "周":
+		return "TO_CHAR(created_at, 'IYYY-IW')", "TO_CHAR(created_at, 'IYYY-IW')"
+	case "月":
+		return "TO_CHAR(created_at, 'YYYY-MM')", "TO_CHAR(created_at, 'YYYY-MM')"
+	default:
+		return "DATE(created_at)", "DATE(created_at)"
+	}
 }
 
 // calculatePeriodRange 计算周期范围

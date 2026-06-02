@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/his-mixed/go/internal/notification/service"
+	"github.com/his-mixed/go/pkg/grpc/common"
 	pb "github.com/his-mixed/go/pkg/grpc/notification"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -89,7 +90,7 @@ func (h *NotificationHandler) GetTemplates(ctx context.Context, req *pb.GetTempl
 
 	return &pb.GetTemplatesResponse{
 		Templates: pbTemplates,
-		Page: &pb.PageResponse{
+		Page: &common.PageResponse{
 			Total: total,
 		},
 	}, nil
