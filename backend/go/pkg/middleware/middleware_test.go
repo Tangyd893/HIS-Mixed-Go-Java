@@ -72,3 +72,21 @@ func TestCORSMiddleware(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
 }
+
+func TestRequestIDUniqueness(t *testing.T) {
+	r := setupRouter(middleware.RequestID())
+	r.GET("/api/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{})
+	})
+
+	ids := make(map[string]bool)
+	for i := 0; i < 100; i++ {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest(http.MethodGet, "/api/test", nil)
+		r.ServeHTTP(w, req)
+		id := w.Header().Get("X-Request-Id")
+		assert.NotEmpty(t, id)
+		assert.False(t, ids[id], "重复的 RequestID: %s", id)
+		ids[id] = true
+	}
+}

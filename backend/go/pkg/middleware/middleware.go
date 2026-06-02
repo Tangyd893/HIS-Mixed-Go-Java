@@ -2,6 +2,8 @@
 package middleware
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"log"
 	"net/http"
 	"time"
@@ -70,5 +72,7 @@ func Logger() gin.HandlerFunc {
 }
 
 func generateID() string {
-	return "req-" + time.Now().Format("20060102150405")
+	b := make([]byte, 8)
+	_, _ = rand.Read(b)
+	return "req-" + hex.EncodeToString(b)
 }
