@@ -87,3 +87,14 @@ func (s *NotificationService) GetTemplateByCode(code string) (*model.Notificatio
 	return s.repo.GetTemplateByCode(code)
 }
 
+// ListTemplates 分页查询模板列表
+func (s *NotificationService) ListTemplates(channel string, page, size int) ([]model.NotificationTemplate, int64, error) {
+	if page <= 0 {
+		page = 1
+	}
+	if size <= 0 {
+		size = 20
+	}
+	return s.repo.ListTemplates(channel, page, size)
+}
+

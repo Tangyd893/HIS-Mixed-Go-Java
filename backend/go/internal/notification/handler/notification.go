@@ -58,8 +58,39 @@ func (h *NotificationHandler) SendMessage(ctx context.Context, req *pb.SendMessa
 
 // GetTemplates 获取消息模板
 func (h *NotificationHandler) GetTemplates(ctx context.Context, req *pb.GetTemplatesRequest) (*pb.GetTemplatesResponse, error) {
-	// 简化处理，返回空列表
+	page := 1
+	size := 20
+	if req.Page != nil {
+		if req.Page.Page > 0 {
+			page = int(req.Page.Page)
+		}
+		if req.Page.PageSize > 0 {
+			size = int(req.Page.PageSize)
+		}
+	}
+
+	templates, total, err := h.svc.ListTemplates(req.Channel, page, size)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "获取模板列表失败: %v", err)
+	}
+
+	var pbTemplates []*pb.MessageTemplate
+	for _, t := range templates {
+		pbTemplates = append(pbTemplates, &pb.MessageTemplate{
+			TemplateId:      t.ID,
+			TemplateCode:    t.TemplateCode,
+			TemplateName:    t.TemplateName,
+			Channel:         t.Channel,
+			TitleTemplate:   t.Title,
+			ContentTemplate: t.Content,
+			Status:          "ACTIVE",
+		})
+	}
+
 	return &pb.GetTemplatesResponse{
-		Templates: []*pb.MessageTemplate{},
+		Templates: pbTemplates,
+		Page: &pb.PageResponse{
+			Total: total,
+		},
 	}, nil
 }

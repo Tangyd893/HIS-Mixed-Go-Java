@@ -26,28 +26,32 @@ func (h *StatisticsHandler) GetDashboard(ctx context.Context, req *pb.GetDashboa
 		return nil, status.Error(codes.InvalidArgument, "统计周期不能为空")
 	}
 
-	// 获取统计数据
-	registrationStats, err := h.svc.GetRegistrationStats("", "")
+	stats, err := h.svc.GetDashboardStats(req.Period, req.DepartmentId)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "获取挂号统计失败: %v", err)
+		return nil, status.Errorf(codes.Internal, "获取仪表盘数据失败: %v", err)
 	}
 
-	clinicStats, err := h.svc.GetClinicStats("", "")
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "获取门诊统计失败: %v", err)
-	}
-
-	pharmacyStats, err := h.svc.GetPharmacyStats("", "")
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "获取药房统计失败: %v", err)
+	// 转换科室统计
+	var deptStats []*pb.DepartmentStat
+	if deptList, ok := stats["dept_stats"].([]map[string]interface{}); ok {
+		for _, dept := range deptList {
+			deptStat := &pb.DepartmentStat{
+				DepartmentId:   dept["department_id"].(int64),
+				DepartmentName: dept["department_name"].(string),
+				VisitCount:     dept["visit_count"].(int64),
+				Revenue:        dept["revenue"].(float64),
+			}
+			deptStats = append(deptStats, deptStat)
+		}
 	}
 
 	return &pb.GetDashboardResponse{
-		TotalRegistrations: int64(registrationStats["total"].(int)),
-		TotalOutpatients:   int64(clinicStats["total_visits"].(int)),
-		TotalPrescriptions: int64(pharmacyStats["total_dispenses"].(int)),
-		TotalRevenue:       0, // 简化处理
-		DeptStats:          []*pb.DepartmentStat{},
+		TotalRegistrations: stats["total_registrations"].(int64),
+		TotalOutpatients:   stats["total_outpatients"].(int64),
+		TotalInpatients:    stats["total_inpatients"].(int64),
+		TotalPrescriptions: stats["total_prescriptions"].(int64),
+		TotalRevenue:       stats["total_revenue"].(float64),
+		DeptStats:          deptStats,
 	}, nil
 }
 
@@ -57,9 +61,22 @@ func (h *StatisticsHandler) GetTrend(ctx context.Context, req *pb.GetTrendReques
 		return nil, status.Error(codes.InvalidArgument, "指标、开始日期和结束日期不能为空")
 	}
 
-	// 简化处理，返回空趋势数据
+	data, err := h.svc.GetTrendData(req.Metric, req.StartDate, req.EndDate, req.Granularity, req.DepartmentId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "获取趋势数据失败: %v", err)
+	}
+
+	var points []*pb.TrendPoint
+	for _, d := range data {
+		point := &pb.TrendPoint{
+			Date:  d["date"].(string),
+			Value: d["value"].(float64),
+		}
+		points = append(points, point)
+	}
+
 	return &pb.GetTrendResponse{
 		Metric: req.Metric,
-		Points: []*pb.TrendPoint{},
+		Points: points,
 	}, nil
 }

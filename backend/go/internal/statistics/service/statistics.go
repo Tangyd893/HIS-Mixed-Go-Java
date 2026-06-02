@@ -81,3 +81,13 @@ func (s *StatisticsService) GetClinicStats(startDate, endDate string) (map[strin
 	return s.repo.GetClinicStats(startDate, endDate)
 }
 
+// GetDashboardStats 获取仪表盘统计数据
+func (s *StatisticsService) GetDashboardStats(period string, departmentID int64) (map[string]interface{}, error) {
+	return s.repo.GetDashboardStats(period, departmentID)
+}
+
+// GetTrendData 获取趋势数据
+func (s *StatisticsService) GetTrendData(metric, startDate, endDate, granularity string, departmentID int64) ([]map[string]interface{}, error) {
+	return s.repo.GetTrendData(metric, startDate, endDate, granularity, departmentID)
+}
+

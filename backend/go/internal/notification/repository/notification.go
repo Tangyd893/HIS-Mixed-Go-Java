@@ -72,3 +72,19 @@ func (r *NotificationRepository) GetTemplateByCode(code string) (*model.Notifica
 	}
 	return &template, nil
 }
+
+// ListTemplates 分页查询模板列表
+func (r *NotificationRepository) ListTemplates(channel string, page, size int) ([]model.NotificationTemplate, int64, error) {
+	var templates []model.NotificationTemplate
+	var total int64
+
+	base := r.db.Model(&model.NotificationTemplate{})
+	if channel != "" {
+		base = base.Where("channel = ?", channel)
+	}
+	base.Count(&total)
+
+	offset := (page - 1) * size
+	err := base.Offset(offset).Limit(size).Order("created_at DESC").Find(&templates).Error
+	return templates, total, err
+}
