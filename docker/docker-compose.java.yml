@@ -5,6 +5,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-auth
     container_name: his-auth
     ports:
       - "8096:8096"
@@ -29,6 +31,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-user
     container_name: his-user
     ports:
       - "8097:8097"
@@ -53,6 +57,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-clinic
     container_name: his-clinic
     ports:
       - "8098:8098"
@@ -77,6 +83,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-emr
     container_name: his-emr
     ports:
       - "8099:8099"
@@ -101,6 +109,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-prescription
     container_name: his-prescription
     ports:
       - "8100:8100"
@@ -125,6 +135,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-billing
     container_name: his-billing
     ports:
       - "8101:8101"
@@ -149,6 +161,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-inpatient
     container_name: his-inpatient
     ports:
       - "8102:8102"
@@ -173,6 +187,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-health-record
     container_name: his-health-record
     ports:
       - "8103:8103"
@@ -197,6 +213,8 @@ services:
     build:
       context: ../backend/java
       dockerfile: ../../docker/Dockerfile.java
+      args:
+        SERVICE_NAME: his-system
     container_name: his-system
     ports:
       - "8104:8104"

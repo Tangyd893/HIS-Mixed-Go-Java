@@ -18,7 +18,8 @@ RUN mvn dependency:go-offline -B
 
 COPY . .
 
-RUN mvn package -DskipTests -B
+ARG SERVICE_NAME
+RUN mvn package -DskipTests -B -pl ${SERVICE_NAME} -am
 
 FROM eclipse-temurin:21-jre-alpine
 
@@ -26,7 +27,7 @@ RUN apk add --no-cache tzdata
 
 ENV TZ=Asia/Shanghai
 
-COPY --from=builder /app/*/target/*.jar /app/app.jar
+COPY --from=builder /app/${SERVICE_NAME}/target/*.jar /app/app.jar
 
 EXPOSE 8096
 

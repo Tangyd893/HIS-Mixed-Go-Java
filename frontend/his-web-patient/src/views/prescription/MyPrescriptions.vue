@@ -11,25 +11,27 @@
     <div class="content">
       <a-tabs v-model:activeKey="activeTab">
         <a-tab-pane key="all" tab="全部">
-          <a-card v-for="item in prescriptionList" :key="item.id" class="card-item">
-            <div class="card-header">
-              <a-tag color="blue">{{ item.status }}</a-tag>
-              <span class="card-date">{{ item.date }}</span>
-            </div>
-            <a-descriptions :column="1" size="small">
-              <a-descriptions-item label="处方编号">{{ item.prescriptionNo }}</a-descriptions-item>
-              <a-descriptions-item label="开方医生">{{ item.doctor }}</a-descriptions-item>
-              <a-descriptions-item label="诊断">{{ item.diagnosis }}</a-descriptions-item>
-            </a-descriptions>
-            <a-divider style="margin: 8px 0" />
-            <div class="drug-list">
-              <div v-for="drug in item.drugs" :key="drug.name" class="drug-item">
-                <span class="drug-name">{{ drug.name }}</span>
-                <span class="drug-usage">{{ drug.usage }}</span>
+          <a-spin :spinning="loading">
+            <a-card v-for="item in prescriptionList" :key="item.id" class="card-item">
+              <div class="card-header">
+                <a-tag :color="item.status === 'DISPENSED' ? 'green' : 'blue'">{{ item.status }}</a-tag>
+                <span class="card-date">{{ item.createdAt?.split('T')[0] }}</span>
               </div>
-            </div>
-          </a-card>
-          <a-empty v-if="prescriptionList.length === 0" description="暂无处方记录" />
+              <a-descriptions :column="1" size="small">
+                <a-descriptions-item label="处方编号">{{ item.prescriptionNo }}</a-descriptions-item>
+                <a-descriptions-item label="开方医生">{{ item.doctorName }}</a-descriptions-item>
+                <a-descriptions-item label="诊断">{{ item.diagnosis }}</a-descriptions-item>
+              </a-descriptions>
+              <a-divider style="margin: 8px 0" />
+              <div class="drug-list">
+                <div v-for="drug in item.items" :key="drug.id" class="drug-item">
+                  <span class="drug-name">{{ drug.drugName }}</span>
+                  <span class="drug-usage">{{ drug.usage }} {{ drug.frequency }}</span>
+                </div>
+              </div>
+            </a-card>
+            <a-empty v-if="prescriptionList.length === 0" description="暂无处方记录" />
+          </a-spin>
         </a-tab-pane>
 
         <a-tab-pane key="active" tab="进行中">
@@ -45,25 +47,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { message } from 'ant-design-vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+import { pharmacyApi, type Prescription } from '@/api'
 
+const authStore = useAuthStore()
 const activeTab = ref('all')
+const loading = ref(false)
+const prescriptionList = ref<Prescription[]>([])
 
-const prescriptionList = [
-  {
-    id: 1,
-    prescriptionNo: 'P20260511001',
-    status: '使用中',
-    date: '2026-05-11',
-    doctor: '张主任',
-    diagnosis: '高血压',
-    drugs: [
-      { name: '硝苯地平片', usage: '每日1次，每次1片，口服' },
-      { name: '阿托伐他汀钙片', usage: '每日1次，每次1片，口服' },
-    ],
-  },
-]
+const fetchPrescriptions = async () => {
+  if (!authStore.isLoggedIn) {
+    message.warning('请先登录')
+    return
+  }
+
+  loading.value = true
+  try {
+    const response = await pharmacyApi.getPrescriptions(authStore.userId!)
+    prescriptionList.value = response.list
+  } catch (error) {
+    message.error('获取处方列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchPrescriptions()
+})
 </script>
 
 <style scoped>

@@ -9,7 +9,8 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/*/
+ARG SERVICE_NAME
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/${SERVICE_NAME}
 
 FROM alpine:latest
 

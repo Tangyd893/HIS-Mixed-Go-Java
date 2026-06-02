@@ -19,15 +19,14 @@
           layout="vertical"
           autocomplete="off"
         >
-          <a-form-item label="手机号">
+          <a-form-item label="用户名">
             <a-input
-              v-model:value="formState.phone"
-              placeholder="请输入手机号"
+              v-model:value="formState.username"
+              placeholder="请输入用户名"
               size="large"
-              :maxlength="11"
             >
               <template #prefix>
-                <PhoneOutlined />
+                <UserOutlined />
               </template>
             </a-input>
           </a-form-item>
@@ -63,30 +62,42 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
   MedicineBoxOutlined,
-  PhoneOutlined,
+  UserOutlined,
   LockOutlined,
 } from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const formState = reactive({
-  phone: '',
+  username: '',
   password: '',
 })
 const loading = ref(false)
 
-const handleLogin = () => {
-  if (!formState.phone || !formState.password) {
-    message.warning('请输入手机号和密码')
+const handleLogin = async () => {
+  if (!formState.username || !formState.password) {
+    message.warning('请输入用户名和密码')
     return
   }
   loading.value = true
-  // TODO: 接入登录接口
-  setTimeout(() => {
-    loading.value = false
+  try {
+    await authStore.login({
+      username: formState.username,
+      password: formState.password,
+    })
     message.success('登录成功')
-  }, 1000)
+    router.push('/')
+  } catch (error: any) {
+    message.error(error.message || '登录失败')
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 

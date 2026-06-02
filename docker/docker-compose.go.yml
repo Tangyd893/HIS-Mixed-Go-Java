@@ -5,6 +5,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: gateway
     container_name: his-gateway
     ports:
       - "8080:8080"
@@ -25,6 +27,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: registration
     container_name: his-registration
     ports:
       - "8083:8083"
@@ -49,6 +53,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: outpatient
     container_name: his-outpatient
     ports:
       - "8091:8091"
@@ -73,6 +79,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: pharmacy
     container_name: his-pharmacy
     ports:
       - "8087:8087"
@@ -97,6 +105,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: schedule
     container_name: his-schedule
     ports:
       - "8090:8090"
@@ -121,6 +131,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: examination
     container_name: his-examination
     ports:
       - "8088:8088"
@@ -145,6 +157,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: followup
     container_name: his-followup
     ports:
       - "8092:8092"
@@ -169,6 +183,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: notification
     container_name: his-notification
     ports:
       - "8094:8094"
@@ -193,6 +209,8 @@ services:
     build:
       context: ../backend/go
       dockerfile: ../../docker/Dockerfile.go
+      args:
+        SERVICE_NAME: statistics
     container_name: his-statistics
     ports:
       - "8095:8095"
