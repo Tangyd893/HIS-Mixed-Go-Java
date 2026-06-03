@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/his-mixed/go/internal/schedule/handler"
+	"github.com/his-mixed/go/internal/schedule/model"
 	"github.com/his-mixed/go/internal/schedule/repository"
 	"github.com/his-mixed/go/internal/schedule/service"
 	"github.com/his-mixed/go/pkg/config"
@@ -21,6 +22,7 @@ import (
 	"github.com/his-mixed/go/pkg/health"
 	"github.com/his-mixed/go/pkg/middleware"
 	"github.com/his-mixed/go/pkg/redis"
+	"github.com/his-mixed/go/pkg/response"
 	"google.golang.org/grpc"
 )
 
@@ -56,7 +58,7 @@ func main() {
 	h := handler.NewScheduleHandler(svc)
 
 	// 启动HTTP服务
-	httpSrv := startHTTPServer(cfg.Server.HTTPPort)
+	httpSrv := startHTTPServer(cfg.Server.HTTPPort, svc)
 
 	// 启动gRPC服务
 	grpcSrv, grpcLis := startGRPCServer(cfg.Server.GRPCPort, h)
@@ -77,11 +79,54 @@ func main() {
 	log.Println("排班管理服务已关闭")
 }
 
-func startHTTPServer(port int) *http.Server {
+func startHTTPServer(port int, svc *service.ScheduleService) *http.Server {
 	r := gin.New()
 	r.Use(middleware.Recovery(), middleware.RequestID(), middleware.Logger())
 	r.GET("/api/health", health.Handler)
 	r.GET("/api/ping", health.PingHandler)
+
+	// HTTP 业务端点
+	r.GET("/api/schedule/plans", func(c *gin.Context) {
+		var doctorID, departmentID int64
+		page := 1
+		size := 10
+		fmt.Sscanf(c.DefaultQuery("doctorId", "0"), "%d", &doctorID)
+		fmt.Sscanf(c.DefaultQuery("departmentId", "0"), "%d", &departmentID)
+		fmt.Sscanf(c.DefaultQuery("page", "1"), "%d", &page)
+		fmt.Sscanf(c.DefaultQuery("pageSize", "10"), "%d", &size)
+		plans, total, err := svc.ListSchedulePlans(doctorID, departmentID, page, size)
+		if err != nil {
+			response.Error(c, 500, 50001)
+			return
+		}
+		response.Success(c, gin.H{"list": plans, "total": total})
+	})
+
+	r.GET("/api/schedule/slots", func(c *gin.Context) {
+		departmentID := c.Query("departmentId")
+		date := c.DefaultQuery("date", "")
+		var did int64
+		fmt.Sscanf(departmentID, "%d", &did)
+		slots, err := svc.GetScheduleSlots(did, date)
+		if err != nil {
+			response.Error(c, 500, 50002)
+			return
+		}
+		response.Success(c, slots)
+	})
+
+	r.POST("/api/schedule/plans", func(c *gin.Context) {
+		var plan model.SchedulePlan
+		if err := c.ShouldBindJSON(&plan); err != nil {
+			response.Error(c, 400, 40001)
+			return
+		}
+		if err := svc.CreateSchedulePlan(&plan); err != nil {
+			response.Error(c, 500, 50003)
+			return
+		}
+		response.Success(c, plan)
+	})
 
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
 	go func() {

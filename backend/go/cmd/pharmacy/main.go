@@ -21,6 +21,7 @@ import (
 	"github.com/his-mixed/go/pkg/health"
 	"github.com/his-mixed/go/pkg/middleware"
 	"github.com/his-mixed/go/pkg/redis"
+	"github.com/his-mixed/go/pkg/response"
 	"google.golang.org/grpc"
 )
 
@@ -59,7 +60,7 @@ func main() {
 	h := handler.NewPharmacyHandler(svc)
 
 	// 启动HTTP服务
-	httpSrv := startHTTPServer(cfg.Server.HTTPPort)
+	httpSrv := startHTTPServer(cfg.Server.HTTPPort, svc)
 
 	// 启动gRPC服务
 	grpcSrv, grpcLis := startGRPCServer(cfg.Server.GRPCPort, h)
@@ -80,11 +81,48 @@ func main() {
 	log.Println("药房管理服务已关闭")
 }
 
-func startHTTPServer(port int) *http.Server {
+func startHTTPServer(port int, svc *service.PharmacyService) *http.Server {
 	r := gin.New()
 	r.Use(middleware.Recovery(), middleware.RequestID(), middleware.Logger())
 	r.GET("/api/health", health.Handler)
 	r.GET("/api/ping", health.PingHandler)
+
+	// HTTP 业务端点
+	r.GET("/api/pharmacy/drugs", func(c *gin.Context) {
+		keyword := c.Query("keyword")
+		page := 1
+		size := 10
+		fmt.Sscanf(c.DefaultQuery("page", "1"), "%d", &page)
+		fmt.Sscanf(c.DefaultQuery("pageSize", "10"), "%d", &size)
+		drugs, total, err := svc.ListDrugs(keyword, page, size)
+		if err != nil {
+			response.Error(c, 500, 50001)
+			return
+		}
+		response.Success(c, gin.H{"list": drugs, "total": total})
+	})
+
+	r.GET("/api/pharmacy/drugs/:id", func(c *gin.Context) {
+		var id int64
+		fmt.Sscanf(c.Param("id"), "%d", &id)
+		drug, err := svc.GetDrugByID(id)
+		if err != nil {
+			response.Error(c, 404, 40401)
+			return
+		}
+		response.Success(c, drug)
+	})
+
+	r.GET("/api/pharmacy/inventory/:drugId", func(c *gin.Context) {
+		var drugID int64
+		fmt.Sscanf(c.Param("drugId"), "%d", &drugID)
+		inventory, err := svc.GetDrugInventory(drugID)
+		if err != nil {
+			response.Error(c, 500, 50002)
+			return
+		}
+		response.Success(c, inventory)
+	})
 
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
 	go func() {
