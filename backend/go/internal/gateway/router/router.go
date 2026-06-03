@@ -142,6 +142,7 @@ func SetupRouter(r *gin.Engine, proxies map[string]gin.HandlerFunc) {
 	{
 		stat.GET("/dashboard", proxy("statistics"))
 		stat.GET("/registration-trend", proxy("statistics"))
+		stat.GET("/trend", proxy("statistics"))
 	}
 
 	sys := r.Group("/api/system")

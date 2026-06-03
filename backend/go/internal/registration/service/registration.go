@@ -50,6 +50,11 @@ func (s *RegistrationService) ListRegistrations(patientID int64, status string, 
 	return s.repo.ListByPatientID(patientID, page, size)
 }
 
+// ListRegistrationsByVisitDate 按就诊日期查询挂号记录
+func (s *RegistrationService) ListRegistrationsByVisitDate(visitDate string, page, size int) ([]model.Registration, int64, error) {
+	return s.repo.ListByVisitDate(visitDate, page, size)
+}
+
 // CreateQueueItem 创建排队叫号
 func (s *RegistrationService) CreateQueueItem(item *model.QueueItem) error {
 	return s.repo.CreateQueueItem(item)

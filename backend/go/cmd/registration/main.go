@@ -144,6 +144,38 @@ func startHTTPServer(port int, svc *service.RegistrationService) *http.Server {
 		response.Success(c, gin.H{"list": regs, "total": total})
 	})
 
+	// 兼容前端调用的路由
+	r.GET("/api/registration/list", func(c *gin.Context) {
+		patientID := c.Query("patientId")
+		visitDate := c.Query("visitDate")
+		page := c.DefaultQuery("page", "1")
+		pageSize := c.DefaultQuery("pageSize", "10")
+		var pid int64
+		var p, ps int
+		fmt.Sscanf(patientID, "%d", &pid)
+		fmt.Sscanf(page, "%d", &p)
+		fmt.Sscanf(pageSize, "%d", &ps)
+
+		var regs []model.Registration
+		var total int64
+		var err error
+
+		if visitDate != "" {
+			regs, total, err = svc.ListRegistrationsByVisitDate(visitDate, p, ps)
+		} else if pid > 0 {
+			regs, total, err = svc.ListRegistrations(pid, "", p, ps)
+		} else {
+			response.Error(c, 400, 40001)
+			return
+		}
+
+		if err != nil {
+			response.Error(c, 500, 50002)
+			return
+		}
+		response.Success(c, gin.H{"list": regs, "total": total})
+	})
+
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
 	go func() {
 		log.Printf("挂号服务 HTTP 启动在端口 %d", port)

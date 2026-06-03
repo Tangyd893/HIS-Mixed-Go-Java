@@ -57,3 +57,8 @@ func (s *FollowupService) GetFollowupRecords(planID, patientID int64) ([]model.F
 	return s.repo.GetFollowupRecords(planID)
 }
 
+// ListFollowupPlansByPatientID 按患者ID查询随访计划
+func (s *FollowupService) ListFollowupPlansByPatientID(patientID int64, page, size int) ([]model.FollowupPlan, int64, error) {
+	return s.repo.ListFollowupPlansByPatientID(patientID, page, size)
+}
+

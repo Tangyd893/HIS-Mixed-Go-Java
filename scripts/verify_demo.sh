@@ -40,6 +40,14 @@ check_service "Schedule (8090)" "http://localhost:8090/health" 200
 check_service "Statistics (8095)" "http://localhost:8095/health" 200
 
 echo ""
+echo "--- 可选服务检查（FULL_MODE） ---"
+check_service "Pharmacy (8087)" "http://localhost:8087/health" 200 || true
+check_service "Billing (8086)" "http://localhost:8086/actuator/health" 200 || true
+check_service "Examination (8088)" "http://localhost:8088/health" 200 || true
+check_service "Followup (8092)" "http://localhost:8092/health" 200 || true
+check_service "Outpatient (8091)" "http://localhost:8091/health" 200 || true
+
+echo ""
 echo "--- 前端服务检查 ---"
 check_service "患者端 (5174)" "http://localhost:5174" 200
 check_service "管理端 (5175)" "http://localhost:5175" 200

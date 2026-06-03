@@ -59,3 +59,16 @@ func (r *FollowupRepository) GetFollowupRecords(planID int64) ([]model.FollowupR
 	err := r.db.Where("plan_id = ?", planID).Order("created_at DESC").Find(&records).Error
 	return records, err
 }
+
+// ListFollowupPlansByPatientID 按患者ID查询随访计划
+func (r *FollowupRepository) ListFollowupPlansByPatientID(patientID int64, page, size int) ([]model.FollowupPlan, int64, error) {
+	var plans []model.FollowupPlan
+	var total int64
+
+	base := r.db.Where("patient_id = ?", patientID)
+	base.Model(&model.FollowupPlan{}).Count(&total)
+
+	offset := (page - 1) * size
+	err := base.Offset(offset).Limit(size).Order("created_at DESC").Find(&plans).Error
+	return plans, total, err
+}

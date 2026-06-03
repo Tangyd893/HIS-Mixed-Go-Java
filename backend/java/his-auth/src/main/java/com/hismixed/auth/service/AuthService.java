@@ -1,6 +1,5 @@
 package com.hismixed.auth.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hismixed.auth.dto.LoginRequest;
 import com.hismixed.auth.dto.LoginResponse;
 import com.hismixed.auth.entity.RefreshToken;
@@ -41,11 +40,8 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         // 查询用户
-        User user = userRepository.selectOne(
-            new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, request.getUsername())
-                .isNull(User::getDeletedAt)
-        );
+        User user = userRepository.findByUsername(request.getUsername())
+            .orElse(null);
 
         if (user == null) {
             throw new RuntimeException("用户名或密码错误");
@@ -84,11 +80,11 @@ public class AuthService {
         token.setToken(refreshToken);
         token.setExpiresAt(LocalDateTime.now().plusDays(7));
         token.setRevoked(false);
-        refreshTokenRepository.insert(token);
+        refreshTokenRepository.save(token);
 
         // 更新最后登录时间
         user.setLastLoginAt(LocalDateTime.now());
-        userRepository.updateById(user);
+        userRepository.save(user);
 
         // 构建响应
         LoginResponse response = new LoginResponse();
@@ -106,17 +102,14 @@ public class AuthService {
     }
 
     public LoginResponse refreshToken(String refreshToken) {
-        RefreshToken token = refreshTokenRepository.selectOne(
-            new LambdaQueryWrapper<RefreshToken>()
-                .eq(RefreshToken::getToken, refreshToken)
-                .eq(RefreshToken::getRevoked, false)
-        );
+        RefreshToken token = refreshTokenRepository.findByTokenAndRevoked(refreshToken, false)
+            .orElse(null);
 
         if (token == null || token.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("刷新令牌无效或已过期");
         }
 
-        User user = userRepository.selectById(token.getUserId());
+        User user = userRepository.findById(token.getUserId()).orElse(null);
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
@@ -127,7 +120,7 @@ public class AuthService {
 
         // 撤销旧令牌
         token.setRevoked(true);
-        refreshTokenRepository.updateById(token);
+        refreshTokenRepository.save(token);
 
         // 查询角色
         List<Role> roles = roleRepository.selectRolesByUserId(user.getId());
@@ -152,7 +145,7 @@ public class AuthService {
         newToken.setToken(newRefreshToken);
         newToken.setExpiresAt(LocalDateTime.now().plusDays(7));
         newToken.setRevoked(false);
-        refreshTokenRepository.insert(newToken);
+        refreshTokenRepository.save(newToken);
 
         // 构建响应
         LoginResponse response = new LoginResponse();

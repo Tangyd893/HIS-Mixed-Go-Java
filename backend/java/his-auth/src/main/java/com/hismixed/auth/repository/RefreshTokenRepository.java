@@ -1,9 +1,12 @@
 package com.hismixed.auth.repository;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hismixed.auth.entity.RefreshToken;
-import org.apache.ibatis.annotations.Mapper;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-@Mapper
-public interface RefreshTokenRepository extends BaseMapper<RefreshToken> {
+import java.util.Optional;
+
+@Repository
+public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
+    Optional<RefreshToken> findByTokenAndRevoked(String token, Boolean revoked);
 }

@@ -1,9 +1,13 @@
 package com.hismixed.auth.repository;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hismixed.auth.entity.User;
-import org.apache.ibatis.annotations.Mapper;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-@Mapper
-public interface UserRepository extends BaseMapper<User> {
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+    boolean existsByUsername(String username);
 }

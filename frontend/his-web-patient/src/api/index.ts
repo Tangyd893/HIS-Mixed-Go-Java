@@ -8,7 +8,10 @@ export { registrationApi } from './registration'
 export type { RegisterRequest as RegistrationRequest, RegisterResponse, Registration } from './registration'
 
 export { pharmacyApi } from './pharmacy'
-export type { Drug, Prescription, PrescriptionItem } from './pharmacy'
+export type { Drug } from './pharmacy'
+
+export { prescriptionApi } from './prescription'
+export type { Prescription, PrescriptionItem } from './prescription'
 
 export { billingApi } from './billing'
 export type { BillItem, Payment, CreatePaymentRequest } from './billing'

@@ -148,6 +148,27 @@ cd ../../docker
 docker compose up -d --build
 ```
 
+### 数据库初始化说明
+
+数据库初始化脚本位于 `scripts/db/db_init.sh`，默认连接参数：
+- **主机**: `localhost`
+- **端口**: `15432`（Docker 映射端口）
+- **用户**: `his_admin`
+- **密码**: `change_me_123`
+
+初始化脚本执行以下操作：
+1. 创建 17 个独立数据库（Database per Service 架构）
+2. 执行迁移脚本创建表结构（18 个迁移文件）
+3. 初始化 `his_auth` 库：创建用户（admin/patient01~02/doctor01~05）和角色
+4. 初始化 `his_user` 库：创建 10 个科室
+5. 初始化 `his_schedule` 库：创建排班计划和号源
+6. 初始化 `his_pharmacy` 库：创建 10 种演示药品
+
+演示账号：
+- 管理员: `admin` / `admin123`
+- 患者: `patient01` / `admin123`
+- 医生: `doctor01~05` / `admin123`
+
 ### 逐个启动后端服务（开发调试）
 
 先启动基础设施：

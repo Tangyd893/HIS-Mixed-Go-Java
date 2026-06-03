@@ -88,6 +88,63 @@ func startHTTPServer(port int) *http.Server {
 	r.GET("/api/health", health.Handler)
 	r.GET("/api/ping", health.PingHandler)
 
+	// 初始化业务组件
+	cfg, _ := config.Load("configs/followup.yaml")
+	db, _ := database.Connect(cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.DBName, cfg.Database.SSLMode)
+	repo := repository.NewFollowupRepository(db)
+	svc := service.NewFollowupService(repo)
+
+	// HTTP 业务端点
+	r.GET("/api/followup/plans", func(c *gin.Context) {
+		patientID := c.Query("patientId")
+		page := c.DefaultQuery("page", "1")
+		pageSize := c.DefaultQuery("pageSize", "10")
+		var pid int64
+		var p, ps int
+		fmt.Sscanf(patientID, "%d", &pid)
+		fmt.Sscanf(page, "%d", &p)
+		fmt.Sscanf(pageSize, "%d", &ps)
+		plans, total, err := svc.ListFollowupPlansByPatientID(pid, p, ps)
+		if err != nil {
+			c.JSON(500, gin.H{"code": 500, "message": "查询失败"})
+			return
+		}
+		c.JSON(200, gin.H{"list": plans, "total": total})
+	})
+
+	r.GET("/api/followup/plans/:id", func(c *gin.Context) {
+		var id int64
+		fmt.Sscanf(c.Param("id"), "%d", &id)
+		plan, err := svc.GetFollowupPlanByID(id)
+		if err != nil {
+			c.JSON(404, gin.H{"code": 404, "message": "计划不存在"})
+			return
+		}
+		c.JSON(200, plan)
+	})
+
+	r.GET("/api/followup/plans/patient/:patientId", func(c *gin.Context) {
+		var patientID int64
+		fmt.Sscanf(c.Param("patientId"), "%d", &patientID)
+		plans, _, err := svc.ListFollowupPlansByPatientID(patientID, 1, 100)
+		if err != nil {
+			c.JSON(500, gin.H{"code": 500, "message": "查询失败"})
+			return
+		}
+		c.JSON(200, plans)
+	})
+
+	r.GET("/api/followup/records/plan/:planId", func(c *gin.Context) {
+		var planID int64
+		fmt.Sscanf(c.Param("planId"), "%d", &planID)
+		records, err := svc.GetFollowupRecords(planID, 0)
+		if err != nil {
+			c.JSON(500, gin.H{"code": 500, "message": "查询失败"})
+			return
+		}
+		c.JSON(200, records)
+	})
+
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
 	go func() {
 		log.Printf("随访服务 HTTP 启动在端口 %d", port)

@@ -88,6 +88,52 @@ func startHTTPServer(port int) *http.Server {
 	r.GET("/api/health", health.Handler)
 	r.GET("/api/ping", health.PingHandler)
 
+	// 初始化业务组件
+	cfg, _ := config.Load("configs/examination.yaml")
+	db, _ := database.Connect(cfg.Database.Host, cfg.Database.Port, cfg.Database.User, cfg.Database.Password, cfg.Database.DBName, cfg.Database.SSLMode)
+	repo := repository.NewExaminationRepository(db)
+	svc := service.NewExaminationService(repo)
+
+	// HTTP 业务端点
+	r.GET("/api/examination/reports", func(c *gin.Context) {
+		patientID := c.Query("patientId")
+		page := c.DefaultQuery("page", "1")
+		pageSize := c.DefaultQuery("pageSize", "10")
+		var pid int64
+		var p, ps int
+		fmt.Sscanf(patientID, "%d", &pid)
+		fmt.Sscanf(page, "%d", &p)
+		fmt.Sscanf(pageSize, "%d", &ps)
+		reports, total, err := svc.ListExamReportsByPatientID(pid, p, ps)
+		if err != nil {
+			c.JSON(500, gin.H{"code": 500, "message": "查询失败"})
+			return
+		}
+		c.JSON(200, gin.H{"list": reports, "total": total})
+	})
+
+	r.GET("/api/examination/reports/:id", func(c *gin.Context) {
+		var id int64
+		fmt.Sscanf(c.Param("id"), "%d", &id)
+		report, err := svc.GetExamReportByID(id)
+		if err != nil {
+			c.JSON(404, gin.H{"code": 404, "message": "报告不存在"})
+			return
+		}
+		c.JSON(200, report)
+	})
+
+	r.GET("/api/examination/reports/patient/:patientId", func(c *gin.Context) {
+		var patientID int64
+		fmt.Sscanf(c.Param("patientId"), "%d", &patientID)
+		reports, _, err := svc.ListExamReportsByPatientID(patientID, 1, 100)
+		if err != nil {
+			c.JSON(500, gin.H{"code": 500, "message": "查询失败"})
+			return
+		}
+		c.JSON(200, reports)
+	})
+
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
 	go func() {
 		log.Printf("检查服务 HTTP 启动在端口 %d", port)

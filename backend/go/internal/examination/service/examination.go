@@ -78,3 +78,8 @@ func (s *ExaminationService) ReviewExamReport(id int64, reviewerID int64, status
 	return s.repo.UpdateExamReport(report)
 }
 
+// ListExamReportsByPatientID 按患者ID查询检查报告
+func (s *ExaminationService) ListExamReportsByPatientID(patientID int64, page, size int) ([]model.ExamReport, int64, error) {
+	return s.repo.ListExamReportsByPatientID(patientID, page, size)
+}
+

@@ -77,3 +77,18 @@ func (r *ExaminationRepository) GetExamReportByRequestID(requestID int64) (*mode
 func (r *ExaminationRepository) UpdateExamReport(report *model.ExamReport) error {
 	return r.db.Save(report).Error
 }
+
+// ListExamReportsByPatientID 按患者ID查询检查报告
+func (r *ExaminationRepository) ListExamReportsByPatientID(patientID int64, page, size int) ([]model.ExamReport, int64, error) {
+	var reports []model.ExamReport
+	var total int64
+
+	// 通过exam_requests表关联查询
+	base := r.db.Joins("JOIN exam_requests ON exam_reports.request_id = exam_requests.id").
+		Where("exam_requests.patient_id = ?", patientID)
+	base.Model(&model.ExamReport{}).Count(&total)
+
+	offset := (page - 1) * size
+	err := base.Offset(offset).Limit(size).Order("exam_reports.created_at DESC").Find(&reports).Error
+	return reports, total, err
+}

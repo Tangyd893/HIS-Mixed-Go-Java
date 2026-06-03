@@ -48,6 +48,19 @@ func (r *RegistrationRepository) ListByPatientID(patientID int64, page, size int
 	return regs, total, err
 }
 
+// ListByVisitDate 按就诊日期查询
+func (r *RegistrationRepository) ListByVisitDate(visitDate string, page, size int) ([]model.Registration, int64, error) {
+	var regs []model.Registration
+	var total int64
+
+	base := r.db.Where("visit_date = ?", visitDate)
+	base.Model(&model.Registration{}).Count(&total)
+
+	offset := (page - 1) * size
+	err := base.Offset(offset).Limit(size).Order("created_at DESC").Find(&regs).Error
+	return regs, total, err
+}
+
 // CreateQueueItem 创建排队项
 func (r *RegistrationRepository) CreateQueueItem(item *model.QueueItem) error {
 	return r.db.Create(item).Error

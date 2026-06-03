@@ -19,14 +19,14 @@
               </div>
               <a-descriptions :column="1" size="small">
                 <a-descriptions-item label="处方编号">{{ item.prescriptionNo }}</a-descriptions-item>
-                <a-descriptions-item label="开方医生">{{ item.doctorName }}</a-descriptions-item>
-                <a-descriptions-item label="诊断">{{ item.diagnosis }}</a-descriptions-item>
+                <a-descriptions-item label="开方医生ID">{{ item.doctorId }}</a-descriptions-item>
+                <a-descriptions-item label="诊断">{{ item.diagnosisSummary }}</a-descriptions-item>
               </a-descriptions>
               <a-divider style="margin: 8px 0" />
               <div class="drug-list">
                 <div v-for="drug in item.items" :key="drug.id" class="drug-item">
                   <span class="drug-name">{{ drug.drugName }}</span>
-                  <span class="drug-usage">{{ drug.usage }} {{ drug.frequency }}</span>
+                  <span class="drug-usage">{{ drug.usageMethod }} {{ drug.frequency }}</span>
                 </div>
               </div>
             </a-card>
@@ -51,7 +51,7 @@ import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { LeftOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
-import { pharmacyApi, type Prescription } from '@/api'
+import { prescriptionApi, type Prescription } from '@/api'
 
 const authStore = useAuthStore()
 const activeTab = ref('all')
@@ -66,7 +66,7 @@ const fetchPrescriptions = async () => {
 
   loading.value = true
   try {
-    const response = await pharmacyApi.getPrescriptions(authStore.userId!)
+    const response = await prescriptionApi.getPrescriptions(authStore.userId!)
     prescriptionList.value = response.list
   } catch (error) {
     message.error('获取处方列表失败')

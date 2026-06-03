@@ -1,13 +1,15 @@
 package com.hismixed.auth.repository;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hismixed.auth.entity.Role;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
-@Mapper
-public interface RoleRepository extends BaseMapper<Role> {
-    @Select("SELECT r.* FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = #{userId}")
-    List<Role> selectRolesByUserId(Long userId);
+@Repository
+public interface RoleRepository extends JpaRepository<Role, Long> {
+    @Query("SELECT r FROM Role r JOIN UserRole ur ON r.id = ur.roleId WHERE ur.userId = :userId")
+    List<Role> selectRolesByUserId(@Param("userId") Long userId);
 }
