@@ -17,6 +17,14 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @GetMapping("/health")
+    public ResponseEntity<?> health() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "UP");
+        result.put("service", "his-auth");
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {

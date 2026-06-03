@@ -19,6 +19,14 @@ public class PatientController {
     @Autowired
     private PatientService patientService;
 
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> health() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "UP");
+        result.put("service", "his-user");
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> listPatients(
             @RequestParam(required = false) String name,

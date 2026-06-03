@@ -43,6 +43,11 @@ func SetupRouter(r *gin.Engine, proxies map[string]gin.HandlerFunc) {
 		reg.POST("/appointments", proxy("registration"))
 		reg.GET("/appointments", proxy("registration"))
 		reg.GET("/queue", proxy("registration"))
+		// 兼容前端调用的路由
+		reg.POST("/register", proxy("registration"))
+		reg.GET("/list", proxy("registration"))
+		reg.GET("/:id", proxy("registration"))
+		reg.PUT("/:id/cancel", proxy("registration"))
 	}
 
 	clinic := r.Group("/api/clinic")
@@ -62,20 +67,29 @@ func SetupRouter(r *gin.Engine, proxies map[string]gin.HandlerFunc) {
 	{
 		bill.POST("/calculate", proxy("billing"))
 		bill.POST("/payments", proxy("billing"))
+		bill.GET("/payments", proxy("billing"))
+		bill.GET("/payments/patient/:patientId", proxy("billing"))
+		bill.GET("/bill-items", proxy("billing"))
+		bill.GET("/unpaid-amount/:patientId", proxy("billing"))
 	}
 
 	pharm := r.Group("/api/pharmacy")
 	{
 		pharm.GET("/drugs", proxy("pharmacy"))
+		pharm.GET("/drugs/:id", proxy("pharmacy"))
 		pharm.POST("/dispense", proxy("pharmacy"))
 		pharm.GET("/dispense-queue", proxy("pharmacy"))
+		pharm.GET("/prescriptions", proxy("pharmacy"))
+		pharm.GET("/prescriptions/:id", proxy("pharmacy"))
 	}
 
 	exam := r.Group("/api/examination")
 	{
 		exam.GET("/requests", proxy("examination"))
 		exam.POST("/reports", proxy("examination"))
+		exam.GET("/reports", proxy("examination"))
 		exam.GET("/reports/:id", proxy("examination"))
+		exam.GET("/reports/patient/:patientId", proxy("examination"))
 	}
 
 	inp := r.Group("/api/inpatient")
@@ -96,13 +110,21 @@ func SetupRouter(r *gin.Engine, proxies map[string]gin.HandlerFunc) {
 	out := r.Group("/api/outpatient")
 	{
 		out.POST("/consultations", proxy("outpatient"))
+		out.GET("/consultations", proxy("outpatient"))
 		out.GET("/consultations/:id", proxy("outpatient"))
+		out.GET("/consultations/patient/:patientId", proxy("outpatient"))
+		out.GET("/messages/:consultationId", proxy("outpatient"))
+		out.POST("/messages", proxy("outpatient"))
 	}
 
 	fu := r.Group("/api/followup")
 	{
 		fu.GET("/plans", proxy("followup"))
+		fu.GET("/plans/:id", proxy("followup"))
+		fu.GET("/plans/patient/:patientId", proxy("followup"))
 		fu.POST("/records", proxy("followup"))
+		fu.GET("/records/plan/:planId", proxy("followup"))
+		fu.PUT("/records/:recordId/confirm", proxy("followup"))
 	}
 
 	hr := r.Group("/api/health-record")
