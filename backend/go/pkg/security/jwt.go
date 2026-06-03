@@ -16,6 +16,7 @@ import (
 var (
 	verifyKey       *rsa.PublicKey
 	signKey         *rsa.PrivateKey
+	hmacSecret      []byte // HMAC-SHA 密钥（用于与 Java 服务互通）
 	ErrInvalidToken = errors.New("无效的Token")
 	ErrExpiredToken = errors.New("Token已过期")
 )
@@ -29,6 +30,11 @@ type Claims struct {
 	Permissions []string `json:"permissions"`
 	DeptID      int64    `json:"deptId"`
 	jwt.RegisteredClaims
+}
+
+// InitWithHMAC 使用 HMAC-SHA 密钥初始化（与 Java 服务互通）
+func InitWithHMAC(secret string) {
+	hmacSecret = []byte(secret)
 }
 
 // Init 初始化 JWT 密钥
@@ -92,8 +98,8 @@ func InitWithKeys(pubKey *rsa.PublicKey, privKey *rsa.PrivateKey) {
 
 // GenerateToken 签发 Access Token
 func GenerateToken(userID int64, username, realName string, roles, permissions []string, deptID int64) (string, error) {
-	if signKey == nil {
-		return "", errors.New("JWT 私钥未配置")
+	if signKey == nil && hmacSecret == nil {
+		return "", errors.New("JWT 密钥未配置")
 	}
 	claims := &Claims{
 		UserID:      userID,
@@ -109,13 +115,18 @@ func GenerateToken(userID int64, username, realName string, roles, permissions [
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	return token.SignedString(signKey)
+	if signKey != nil {
+		return token.SignedString(signKey)
+	}
+	// 使用 HMAC 签名
+	token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(hmacSecret)
 }
 
 // GenerateRefreshToken 签发 Refresh Token
 func GenerateRefreshToken(userID int64, username string) (string, error) {
-	if signKey == nil {
-		return "", errors.New("JWT 私钥未配置")
+	if signKey == nil && hmacSecret == nil {
+		return "", errors.New("JWT 密钥未配置")
 	}
 	claims := &jwt.RegisteredClaims{
 		Subject:   username,
@@ -125,11 +136,33 @@ func GenerateRefreshToken(userID int64, username string) (string, error) {
 		Issuer:    "his-mixed",
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	return token.SignedString(signKey)
+	if signKey != nil {
+		return token.SignedString(signKey)
+	}
+	token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(hmacSecret)
 }
 
 // ParseToken 解析 Token
 func ParseToken(tokenStr string) (*Claims, error) {
+	// 优先使用 HMAC 验证（与 Java 服务互通）
+	if hmacSecret != nil {
+		token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("不支持的签名方法: %v", t.Header["alg"])
+			}
+			return hmacSecret, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+			return claims, nil
+		}
+		return nil, ErrInvalidToken
+	}
+
+	// 回退到 RSA 验证
 	if verifyKey == nil {
 		return nil, errors.New("JWT 公钥未配置")
 	}

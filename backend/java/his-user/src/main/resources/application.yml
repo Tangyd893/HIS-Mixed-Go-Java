@@ -4,12 +4,9 @@ spring:
   application:
     name: his-user
   datasource:
-    url: jdbc:postgresql://localhost:5432/his_user
+    url: jdbc:postgresql://localhost:15432/his_user
     username: his_admin
     password: change_me_123
-  cloud:
-    nacos:
-      discovery:
-        server-addr: localhost:8848
-      config:
-        server-addr: localhost:8848
+grpc:
+  server:
+    port: 9092

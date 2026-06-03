@@ -21,22 +21,22 @@ ON CONFLICT (code) DO NOTHING;
 -- ============================================================
 -- 2. 患者用户账号
 -- ============================================================
-INSERT INTO sys_user (username, password, real_name, phone, email, status, create_time, update_time)
+INSERT INTO users (username, password_hash, real_name, phone, email, status, created_at, updated_at)
 VALUES
 ('patient01', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '张三', '13900000001', 'patient01@hismixed.com', 1, now(), now()),
 ('patient02', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李四', '13900000002', 'patient02@hismixed.com', 1, now(), now())
 ON CONFLICT (username) DO NOTHING;
 
 -- 患者角色关联
-INSERT INTO sys_user_role (user_id, role_id)
-SELECT u.id, r.id FROM sys_user u, sys_role r
-WHERE u.username LIKE 'patient%' AND r.role_code = 'PATIENT'
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r
+WHERE u.username LIKE 'patient%' AND r.code = 'PATIENT'
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
 -- 3. 医生用户账号
 -- ============================================================
-INSERT INTO sys_user (username, password, real_name, phone, email, status, create_time, update_time)
+INSERT INTO users (username, password_hash, real_name, phone, email, status, created_at, updated_at)
 VALUES
 ('doctor01', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '张医生', '13800000001', 'doctor01@hismixed.com', 1, now(), now()),
 ('doctor02', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '李医生', '13800000002', 'doctor02@hismixed.com', 1, now(), now()),
@@ -46,9 +46,9 @@ VALUES
 ON CONFLICT (username) DO NOTHING;
 
 -- 医生角色关联
-INSERT INTO sys_user_role (user_id, role_id)
-SELECT u.id, r.id FROM sys_user u, sys_role r
-WHERE u.username LIKE 'doctor%' AND r.role_code = 'DOCTOR'
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u, roles r
+WHERE u.username LIKE 'doctor%' AND r.code = 'DOCTOR'
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
@@ -56,27 +56,27 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 INSERT INTO doctor (user_id, name, gender, title, department_id, specialty, introduction, status, create_time, update_time)
 SELECT u.id, u.real_name, 'M', '主任医师', d.id, '心血管疾病诊治', '从事心血管内科工作20余年，擅长冠心病、高血压、心力衰竭等疾病的诊治。', 1, now(), now()
-FROM sys_user u, department d WHERE u.username = 'doctor01' AND d.code = 'DEPT_NK'
+FROM users u, department d WHERE u.username = 'doctor01' AND d.code = 'DEPT_NK'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO doctor (user_id, name, gender, title, department_id, specialty, introduction, status, create_time, update_time)
 SELECT u.id, u.real_name, 'M', '副主任医师', d.id, '普外科手术', '擅长胃肠道肿瘤、肝胆疾病的微创手术治疗。', 1, now(), now()
-FROM sys_user u, department d WHERE u.username = 'doctor02' AND d.code = 'DEPT_WK'
+FROM users u, department d WHERE u.username = 'doctor02' AND d.code = 'DEPT_WK'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO doctor (user_id, name, gender, title, department_id, specialty, introduction, status, create_time, update_time)
 SELECT u.id, u.real_name, 'F', '主治医师', d.id, '小儿呼吸系统疾病', '擅长小儿肺炎、哮喘、支气管炎等呼吸系统疾病的诊治。', 1, now(), now()
-FROM sys_user u, department d WHERE u.username = 'doctor03' AND d.code = 'DEPT_EK'
+FROM users u, department d WHERE u.username = 'doctor03' AND d.code = 'DEPT_EK'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO doctor (user_id, name, gender, title, department_id, specialty, introduction, status, create_time, update_time)
 SELECT u.id, u.real_name, 'F', '副主任医师', d.id, '产科高危妊娠', '擅长高危妊娠管理、产前诊断、难产处理。', 1, now(), now()
-FROM sys_user u, department d WHERE u.username = 'doctor04' AND d.code = 'DEPT_FCK'
+FROM users u, department d WHERE u.username = 'doctor04' AND d.code = 'DEPT_FCK'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO doctor (user_id, name, gender, title, department_id, specialty, introduction, status, create_time, update_time)
 SELECT u.id, u.real_name, 'M', '主任医师', d.id, '关节外科', '擅长人工关节置换、运动损伤、骨折微创治疗。', 1, now(), now()
-FROM sys_user u, department d WHERE u.username = 'doctor05' AND d.code = 'DEPT_GK'
+FROM users u, department d WHERE u.username = 'doctor05' AND d.code = 'DEPT_GK'
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
@@ -116,12 +116,12 @@ ON CONFLICT (code) DO NOTHING;
 -- ============================================================
 INSERT INTO patient (user_id, name, gender, birth_date, phone, id_card, address, status, create_time, update_time)
 SELECT u.id, '张三', 'M', '1990-01-15', '13900000001', '110101199001150011', '北京市东城区XX小区1号楼101', 1, now(), now()
-FROM sys_user u WHERE u.username = 'patient01'
+FROM users u WHERE u.username = 'patient01'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO patient (user_id, name, gender, birth_date, phone, id_card, address, status, create_time, update_time)
 SELECT u.id, '李四', 'F', '1985-06-20', '13900000002', '110101198506200022', '北京市西城区XX路2号', 1, now(), now()
-FROM sys_user u WHERE u.username = 'patient02'
+FROM users u WHERE u.username = 'patient02'
 ON CONFLICT DO NOTHING;
 
 INSERT INTO patient (user_id, name, gender, birth_date, phone, id_card, address, status, create_time, update_time)

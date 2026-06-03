@@ -15,6 +15,7 @@ import (
 	"github.com/his-mixed/go/internal/gateway/handler"
 	"github.com/his-mixed/go/internal/gateway/router"
 	"github.com/his-mixed/go/pkg/middleware"
+	"github.com/his-mixed/go/pkg/security"
 )
 
 func main() {
@@ -37,6 +38,9 @@ func main() {
 			"emr": "http://localhost:8097",
 		}
 	}
+
+	// 初始化 HMAC-SHA 密钥（与 Java 服务互通）
+	security.InitWithHMAC("his-mixed-jwt-secret-key-2026-secure")
 
 	proxies := handler.InitProxies(cfg.Routes)
 

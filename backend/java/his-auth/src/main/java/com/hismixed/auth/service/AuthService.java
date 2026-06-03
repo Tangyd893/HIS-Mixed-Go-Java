@@ -33,7 +33,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
 
-    @Value("${jwt.secret:his-mixed-jwt-secret-key-2026}")
+    @Value("${jwt.secret:his-mixed-jwt-secret-key-2026-secure}")
     private String jwtSecret;
 
     @Value("${jwt.expiration:7200}")

@@ -1,0 +1,2 @@
+-- HIS-Mixed 挂号相关演示数据（his_registration 库）
+-- 注意：需要先确保 his_schedule 库中有排班数据

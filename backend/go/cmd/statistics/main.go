@@ -21,6 +21,7 @@ import (
 	"github.com/his-mixed/go/pkg/health"
 	"github.com/his-mixed/go/pkg/middleware"
 	"github.com/his-mixed/go/pkg/redis"
+	"github.com/his-mixed/go/pkg/response"
 	"google.golang.org/grpc"
 )
 
@@ -59,7 +60,7 @@ func main() {
 	h := handler.NewStatisticsHandler(svc)
 
 	// 启动HTTP服务
-	httpSrv := startHTTPServer(cfg.Server.HTTPPort)
+	httpSrv := startHTTPServer(cfg.Server.HTTPPort, svc)
 
 	// 启动gRPC服务
 	grpcSrv, grpcLis := startGRPCServer(cfg.Server.GRPCPort, h)
@@ -80,13 +81,47 @@ func main() {
 	log.Println("数据统计服务已关闭")
 }
 
-func startHTTPServer(port int) *http.Server {
+func startHTTPServer(port int, svc *service.StatisticsService) *http.Server {
 	r := gin.New()
 	r.Use(middleware.Recovery())
 	r.Use(middleware.RequestID())
 	r.Use(middleware.Logger())
 	r.GET("/api/health", health.Handler)
 	r.GET("/api/ping", health.PingHandler)
+
+	// HTTP 业务端点
+	r.GET("/api/statistics/dashboard", func(c *gin.Context) {
+		period := c.DefaultQuery("period", "today")
+		deptId := c.Query("departmentId")
+		var departmentId int64
+		if deptId != "" {
+			fmt.Sscanf(deptId, "%d", &departmentId)
+		}
+		stats, err := svc.GetDashboardStats(period, departmentId)
+		if err != nil {
+			response.Error(c, 500, 50001)
+			return
+		}
+		response.Success(c, stats)
+	})
+
+	r.GET("/api/statistics/registration-trend", func(c *gin.Context) {
+		metric := c.DefaultQuery("metric", "registration")
+		startDate := c.DefaultQuery("startDate", "")
+		endDate := c.DefaultQuery("endDate", "")
+		granularity := c.DefaultQuery("granularity", "day")
+		deptId := c.Query("departmentId")
+		var departmentId int64
+		if deptId != "" {
+			fmt.Sscanf(deptId, "%d", &departmentId)
+		}
+		data, err := svc.GetTrendData(metric, startDate, endDate, granularity, departmentId)
+		if err != nil {
+			response.Error(c, 500, 50002)
+			return
+		}
+		response.Success(c, data)
+	})
 
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
 	go func() {
