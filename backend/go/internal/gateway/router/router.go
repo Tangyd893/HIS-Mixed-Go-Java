@@ -34,6 +34,7 @@ func SetupRouter(r *gin.Engine, proxies map[string]gin.HandlerFunc) {
 		user.PUT("/patients/:id", proxy("user"))
 		user.GET("/employees", proxy("user"))
 		user.GET("/departments", proxy("user"))
+		user.GET("/departments/tree", proxy("user"))
 	}
 
 	reg := r.Group("/api/registration")
